@@ -18,6 +18,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    serverComponentsExternalPackages: ['@radix-ui*'], // for shadcn/ui server components
+  },
 };
 
 export default nextConfig;
