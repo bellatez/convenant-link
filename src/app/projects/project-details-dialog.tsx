@@ -16,7 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Target, CalendarClock, Users2, TrendingUp, HandCoins, Percent } from "lucide-react";
+import { Target, CalendarClock, Users2, TrendingUp, HandCoins, Percent, ClipboardList } from "lucide-react"; // Added ClipboardList
 import { format } from "date-fns";
 
 interface ProjectDetailsDialogProps {
@@ -109,7 +109,10 @@ export function ProjectDetailsDialog({ project, isOpen, onOpenChange, allRegiste
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Overall Project Summary</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5 text-primary" /> {/* Added Icon */}
+                  Overall Project Summary
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 {project.description && (
