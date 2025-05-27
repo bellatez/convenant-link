@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -41,16 +41,15 @@ export default function ConnectionCardsPage() {
   };
 
   // Draw an initial card on component mount
-  useState(() => {
-    // This is a bit of a hack to call drawNewCard on mount for useState initializer
-    // In a more complex scenario, useEffect would be better, but this avoids hydration issues with initial random.
+  useEffect(() => {
     if (!currentQuestion) {
         const initialRandomIndex = Math.floor(Math.random() * connectionQuestions.length);
         const initialQuestion = connectionQuestions[initialRandomIndex];
         setCurrentQuestion(initialQuestion);
         setDrawnQuestions(new Set<string>().add(initialQuestion));
     }
-  });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   return (

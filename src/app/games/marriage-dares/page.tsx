@@ -28,7 +28,7 @@ export default function MarriageDaresPage() {
       const randomIndex = Math.floor(Math.random() * dares.length);
       setCurrentDare(dares[randomIndex]);
       setIsLoading(false);
-    }, 500);
+    }, 300); // Reduced delay for quicker response
   };
   
   // Get an initial dare on mount

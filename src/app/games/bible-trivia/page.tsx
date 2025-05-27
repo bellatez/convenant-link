@@ -134,19 +134,19 @@ export default function BibleTriviaPage() {
                 </Button>
               )}
               {showResult && (
-                <Card className={`p-4 ${selectedAnswer === currentQuestion.correctOptionId ? 'bg-green-100 border-green-500' : 'bg-red-100 border-red-500'}`}>
+                <Card className={`p-4 ${selectedAnswer === currentQuestion.correctOptionId ? 'bg-green-100 dark:bg-green-900/30 border-green-500' : 'bg-red-100 dark:bg-red-900/30 border-red-500'}`}>
                   <div className="flex items-center">
                     {selectedAnswer === currentQuestion.correctOptionId ? (
-                      <CheckCircle className="h-6 w-6 text-green-700 mr-2" />
+                      <CheckCircle className="h-6 w-6 text-green-700 dark:text-green-400 mr-2" />
                     ) : (
-                      <XCircle className="h-6 w-6 text-red-700 mr-2" />
+                      <XCircle className="h-6 w-6 text-red-700 dark:text-red-400 mr-2" />
                     )}
-                    <p className={`text-lg font-semibold ${selectedAnswer === currentQuestion.correctOptionId ? 'text-green-800' : 'text-red-800'}`}>
+                    <p className={`text-lg font-semibold ${selectedAnswer === currentQuestion.correctOptionId ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
                       {selectedAnswer === currentQuestion.correctOptionId ? "Correct!" : "Incorrect."}
                     </p>
                   </div>
                   {selectedAnswer !== currentQuestion.correctOptionId && (
-                    <p className="text-sm text-red-700 mt-1">
+                    <p className="text-sm text-red-700 dark:text-red-400 mt-1">
                       The correct answer was: {currentQuestion.options.find(o => o.id === currentQuestion.correctOptionId)?.text}
                     </p>
                   )}
