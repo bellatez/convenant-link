@@ -12,24 +12,35 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ProjectForm } from "./project-form";
+import { ContributionForm } from "./contribution-form";
 import type { Project, Contribution } from "./types";
-import { Target, PlusCircle, CalendarClock, Edit, Trash2, Users2, Info, TrendingUp, HandCoins } from "lucide-react";
+import { Target, PlusCircle, CalendarClock, Edit, Trash2, Users2, Info, TrendingUp, HandCoins, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
 
+// Helper to format XAF amounts with comma separators
+const formatXAF = (amount: number): string => {
+  return amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+};
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isMounted, setIsMounted] = useState(false);
+  
   const [isProjectFormOpen, setIsProjectFormOpen] = useState(false);
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+
+  const [isContributionModalOpen, setIsContributionModalOpen] = useState(false);
+  const [selectedProjectForContribution, setSelectedProjectForContribution] = useState<Project | null>(null);
+
 
   useEffect(() => {
     setIsMounted(true);
     const storedProjects = localStorage.getItem("covenantLinkProjects");
     if (storedProjects) {
       setProjects(JSON.parse(storedProjects, (key, value) => {
-        if (key === 'deadline' || key === 'date') return new Date(value);
+        if (key === 'deadline' || key === 'date') return new Date(value); // Ensure dates are parsed correctly
         return value;
       }));
     }
@@ -57,11 +68,20 @@ export default function ProjectsPage() {
   };
   
   const handleDeleteProject = (projectId: string) => {
-    // Basic confirmation for now
-    if (confirm("Are you sure you want to delete this project and all its contributions?")) {
+    if (window.confirm("Are you sure you want to delete this project and all its contributions? This action cannot be undone.")) {
       setProjects(prev => prev.filter(p => p.id !== projectId));
     }
   };
+
+  const handleOpenContributionModal = (project: Project) => {
+    setSelectedProjectForContribution(project);
+    setIsContributionModalOpen(true);
+  };
+
+  const handleContributionFormSubmit = useCallback(() => {
+    setIsContributionModalOpen(false);
+    setSelectedProjectForContribution(null);
+  }, []);
 
   const calculateCurrentAmount = (contributions: Contribution[]): number => {
     return contributions.reduce((acc, curr) => acc + curr.amount, 0);
@@ -72,7 +92,7 @@ export default function ProjectsPage() {
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)] text-center p-6">
         <Card className="w-full max-w-md shadow-xl">
           <CardHeader className="items-center">
-            <Target className="h-16 w-16 text-primary mb-4 animate-pulse" />
+            <Loader2 className="h-16 w-16 text-primary mb-4 animate-spin" />
             <CardTitle className="text-3xl font-bold">Group Projects</CardTitle>
             <CardDescription className="text-lg">Loading project data...</CardDescription>
           </CardHeader>
@@ -102,6 +122,7 @@ export default function ProjectsPage() {
 
       <Separator />
 
+      {/* Project Form Dialog */}
       <Dialog open={isProjectFormOpen} onOpenChange={(isOpen) => {
           setIsProjectFormOpen(isOpen);
           if (!isOpen) setProjectToEdit(null);
@@ -123,11 +144,36 @@ export default function ProjectsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Contribution Form Dialog */}
+      {selectedProjectForContribution && (
+        <Dialog open={isContributionModalOpen} onOpenChange={(isOpen) => {
+            setIsContributionModalOpen(isOpen);
+            if (!isOpen) setSelectedProjectForContribution(null);
+          }}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add Contribution to "{selectedProjectForContribution.name}"</DialogTitle>
+              <DialogDescription>
+                Enter the details of the contribution.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <ContributionForm
+                project={selectedProjectForContribution}
+                setProjects={setProjects}
+                onFormSubmit={handleContributionFormSubmit}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+
       {projects.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {projects.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime()).map((project) => {
             const currentAmount = calculateCurrentAmount(project.contributions);
-            const progressPercentage = project.targetAmount > 0 ? (currentAmount / project.targetAmount) * 100 : 0;
+            const progressPercentage = project.targetAmount > 0 ? Math.min((currentAmount / project.targetAmount) * 100, 100) : 0;
             const amountPerFamily = project.numberOfFamilies > 0 ? project.targetAmount / project.numberOfFamilies : 0;
 
             return (
@@ -163,7 +209,7 @@ export default function ProjectsPage() {
                       <div className="flex justify-between items-baseline text-sm mb-0.5">
                         <span className="text-muted-foreground flex items-center"><TrendingUp className="h-4 w-4 mr-1.5"/>Overall Progress</span>
                         <span className="font-semibold text-primary">
-                          XAF {currentAmount.toFixed(0)} / {project.targetAmount.toFixed(0)}
+                          XAF {formatXAF(currentAmount)} / {formatXAF(project.targetAmount)}
                         </span>
                       </div>
                       <Progress value={progressPercentage} aria-label={`${project.name} progress ${progressPercentage.toFixed(0)}%`} />
@@ -174,8 +220,8 @@ export default function ProjectsPage() {
                         <span className="font-medium">{project.numberOfFamilies}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground flex items-center"><Target className="h-4 w-4 mr-1.5"/>Target / Family</span>
-                        <span className="font-medium">XAF {amountPerFamily > 0 ? amountPerFamily.toFixed(0) : "N/A"}</span>
+                        <span className="text-muted-foreground flex items-center"><Target className="h-4 w-4 mr-1.5"/>Target / Family (XAF)</span>
+                        <span className="font-medium">{amountPerFamily > 0 ? formatXAF(amountPerFamily) : "N/A"}</span>
                     </div>
                   </div>
                   
@@ -186,10 +232,10 @@ export default function ProjectsPage() {
                     </h4>
                     {project.contributions.length > 0 ? (
                       <ul className="text-xs text-muted-foreground list-disc list-inside max-h-24 overflow-y-auto space-y-0.5 pr-2">
-                        {project.contributions.slice(0,5).map(c => ( // Show first 5
-                            <li key={c.id} className="truncate">{c.coupleName}: XAF {c.amount.toFixed(0)}</li>
+                        {project.contributions.slice(0,5).map(c => ( 
+                            <li key={c.id} className="truncate">{c.coupleName}: XAF {formatXAF(c.amount)} on {format(c.date, "PP")}</li>
                         ))}
-                        {project.contributions.length > 5 && <li>...and {project.contributions.length-5} more</li>}
+                        {project.contributions.length > 5 && <li className="italic">...and {project.contributions.length-5} more</li>}
                       </ul>
                     ) : (
                       <p className="text-xs text-muted-foreground italic">No contributions yet.</p>
@@ -197,8 +243,8 @@ export default function ProjectsPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="border-t pt-4">
-                  <Button variant="outline" className="w-full" onClick={() => alert(`Adding contribution to ${project.name} (XAF) - Coming soon!`)}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add Contribution
+                  <Button variant="outline" className="w-full" onClick={() => handleOpenContributionModal(project)}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Contribution (XAF)
                   </Button>
                 </CardFooter>
               </Card>
