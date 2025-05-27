@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, Zap, Gift, HeartHandshake } from "lucide-react";
+import { ArrowLeft, Zap, Gift, HeartHandshake, Loader2 } from "lucide-react";
 
 const dares: string[] = [
   "Pray together for 10 minutes tonight about your week.",
@@ -28,7 +28,7 @@ export default function MarriageDaresPage() {
       const randomIndex = Math.floor(Math.random() * dares.length);
       setCurrentDare(dares[randomIndex]);
       setIsLoading(false);
-    }, 300); // Reduced delay for quicker response
+    }, 300); 
   };
   
   // Get an initial dare on mount
@@ -79,8 +79,17 @@ export default function MarriageDaresPage() {
           )}
 
           <Button onClick={getNewDare} className="mt-8" disabled={isLoading}>
-            <HeartHandshake className="mr-2 h-4 w-4" />
-            {isLoading ? "Getting Dare..." : "Get a New Dare"}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Getting Dare...
+              </>
+            ) : (
+              <>
+                <HeartHandshake className="mr-2 h-4 w-4" />
+                Get a New Dare
+              </>
+            )}
           </Button>
         </CardContent>
       </Card>

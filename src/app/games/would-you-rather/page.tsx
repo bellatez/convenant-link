@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, Users, HelpCircle, Lightbulb } from "lucide-react";
+import { ArrowLeft, Users, HelpCircle, Lightbulb, Loader2 } from "lucide-react";
 
 interface WouldYouRatherQuestion {
   id: string;
@@ -87,8 +87,17 @@ export default function WouldYouRatherPage() {
 
 
           <Button onClick={getNewQuestion} className="mt-8" disabled={isLoading}>
-            <Lightbulb className="mr-2 h-4 w-4" />
-            {isLoading ? "Loading..." : "Get New Question"}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <Lightbulb className="mr-2 h-4 w-4" />
+                Get New Question
+              </>
+            )}
           </Button>
            <p className="text-xs text-muted-foreground mt-2">Click an option to make your choice (Interaction coming soon!).</p>
         </CardContent>
