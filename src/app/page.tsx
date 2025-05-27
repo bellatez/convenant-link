@@ -10,8 +10,9 @@ import { Progress } from "@/components/ui/progress";
 import { siteConfig } from "@/config/site";
 import type { Event } from "./events/types";
 import type { Project, Contribution } from "./projects/types";
+import type { Family } from "./families/types"; // Added Family type import
 import { format } from "date-fns";
-import { CalendarDays, ListChecks, ExternalLink, Clock } from "lucide-react";
+import { CalendarDays, ListChecks, ExternalLink, Clock, Users, HomeIcon } from "lucide-react"; // Added Users icon
 
 const formatXAF = (amount: number): string => {
   return amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -24,6 +25,7 @@ const calculateCurrentAmount = (contributions: Contribution[]): number => {
 export default function DashboardPage() {
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [activeProjects, setActiveProjects] = useState<Project[]>([]);
+  const [families, setFamilies] = useState<Family[]>([]); // Added state for families
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function DashboardPage() {
       const futureEvents = parsedEvents
         .filter(event => new Date(event.date) >= now)
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        .slice(0, 3); // Get top 3
+        .slice(0, 3); 
       setUpcomingEvents(futureEvents);
     }
 
@@ -56,9 +58,17 @@ export default function DashboardPage() {
       const currentProjects = parsedProjects
         .filter(project => new Date(project.deadline) >= now)
         .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-        .slice(0, 3); // Get top 3
+        .slice(0, 3); 
       setActiveProjects(currentProjects);
     }
+
+    // Load families from localStorage
+    const storedFamilies = localStorage.getItem("covenantLinkFamilies");
+    if (storedFamilies) {
+      const parsedFamilies: Family[] = JSON.parse(storedFamilies);
+      setFamilies(parsedFamilies.slice(0, 5)); // Display top 5 families for brevity
+    }
+
   }, []);
 
 
@@ -80,29 +90,29 @@ export default function DashboardPage() {
 
       <Separator />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl flex items-center"><CalendarDays className="mr-2 h-5 w-5 text-primary" /> Upcoming Events</CardTitle>
               <Button variant="outline" size="sm" asChild>
-                <Link href="/events">View All Events <ExternalLink className="ml-2 h-3 w-3"/></Link>
+                <Link href="/events">View All <ExternalLink className="ml-1.5 h-3 w-3"/></Link>
               </Button>
             </div>
-            <CardDescription>Stay informed about the latest gatherings and meetings.</CardDescription>
+            <CardDescription>Latest gatherings and meetings.</CardDescription>
           </CardHeader>
           <CardContent>
             {isMounted && upcomingEvents.length > 0 ? (
-              <ul className="space-y-4">
+              <ul className="space-y-3">
                 {upcomingEvents.map((event) => (
-                  <li key={event.id} className="p-3 bg-secondary/50 rounded-md shadow-sm">
-                    <h4 className="font-semibold text-md text-foreground">{event.title}</h4>
-                    <div className="text-xs text-muted-foreground flex items-center mt-1">
-                      <CalendarDays className="mr-1.5 h-3.5 w-3.5" /> {format(event.date, "PPP")}
-                      <Clock className="ml-3 mr-1.5 h-3.5 w-3.5" /> {event.time}
+                  <li key={event.id} className="p-2.5 bg-secondary/50 rounded-md shadow-sm">
+                    <h4 className="font-semibold text-sm text-foreground truncate">{event.title}</h4>
+                    <div className="text-xs text-muted-foreground flex items-center mt-0.5">
+                      <CalendarDays className="mr-1.5 h-3 w-3" /> {format(event.date, "MMM d, yyyy")}
+                      <Clock className="ml-2.5 mr-1.5 h-3 w-3" /> {event.time}
                     </div>
                      {event.selectedTopicId && event.suggestedTopics.find(t => t.id === event.selectedTopicId) && (
-                        <p className="text-xs text-primary mt-1 truncate">
+                        <p className="text-xs text-primary mt-0.5 truncate">
                             Topic: {event.suggestedTopics.find(t => t.id === event.selectedTopicId)?.topic}
                         </p>
                      )}
@@ -110,11 +120,11 @@ export default function DashboardPage() {
                 ))}
               </ul>
             ) : isMounted ? (
-              <p className="text-muted-foreground text-center py-4">No upcoming events scheduled. Check back soon!</p>
+              <p className="text-muted-foreground text-center py-4 text-sm">No upcoming events.</p>
             ) : (
-              <div className="space-y-3"> {/* Skeleton loader */}
-                <div className="h-10 bg-muted rounded-md animate-pulse"></div>
-                <div className="h-10 bg-muted rounded-md animate-pulse"></div>
+              <div className="space-y-2"> 
+                <div className="h-8 bg-muted rounded-md animate-pulse"></div>
+                <div className="h-8 bg-muted rounded-md animate-pulse"></div>
               </div>
             )}
           </CardContent>
@@ -125,40 +135,73 @@ export default function DashboardPage() {
              <div className="flex items-center justify-between">
               <CardTitle className="text-xl flex items-center"><ListChecks className="mr-2 h-5 w-5 text-primary" /> Active Projects</CardTitle>
               <Button variant="outline" size="sm" asChild>
-                <Link href="/projects">View All Projects <ExternalLink className="ml-2 h-3 w-3"/></Link>
+                <Link href="/projects">View All <ExternalLink className="ml-1.5 h-3 w-3"/></Link>
               </Button>
             </div>
-            <CardDescription>Track the progress of ongoing group initiatives.</CardDescription>
+            <CardDescription>Ongoing group initiatives.</CardDescription>
           </CardHeader>
           <CardContent>
             {isMounted && activeProjects.length > 0 ? (
-              <ul className="space-y-4">
+              <ul className="space-y-3">
                 {activeProjects.map((project) => {
                   const currentAmount = calculateCurrentAmount(project.contributions);
                   const progressPercentage = project.targetAmount > 0 ? Math.min((currentAmount / project.targetAmount) * 100, 100) : 0;
                   return (
-                    <li key={project.id} className="p-3 bg-secondary/50 rounded-md shadow-sm">
-                      <h4 className="font-semibold text-md text-foreground">{project.name}</h4>
-                      <div className="text-xs text-muted-foreground flex items-center mt-1">
-                        <CalendarDays className="mr-1.5 h-3.5 w-3.5" /> Deadline: {format(project.deadline, "PPP")}
+                    <li key={project.id} className="p-2.5 bg-secondary/50 rounded-md shadow-sm">
+                      <h4 className="font-semibold text-sm text-foreground truncate">{project.name}</h4>
+                      <div className="text-xs text-muted-foreground flex items-center mt-0.5">
+                        <CalendarDays className="mr-1.5 h-3 w-3" /> Deadline: {format(project.deadline, "MMM d, yyyy")}
                       </div>
-                      <div className="mt-2">
+                      <div className="mt-1.5">
                         <div className="flex justify-between text-xs text-muted-foreground mb-0.5">
                           <span>Progress</span>
                           <span>XAF {formatXAF(currentAmount)} / {formatXAF(project.targetAmount)}</span>
                         </div>
-                        <Progress value={progressPercentage} aria-label={`${project.name} progress ${progressPercentage.toFixed(0)}%`} className="h-2" />
+                        <Progress value={progressPercentage} aria-label={`${project.name} progress ${progressPercentage.toFixed(0)}%`} className="h-1.5" />
                       </div>
                     </li>
                   );
                 })}
               </ul>
             ) : isMounted ? (
-              <p className="text-muted-foreground text-center py-4">No active projects at the moment.</p>
+              <p className="text-muted-foreground text-center py-4 text-sm">No active projects.</p>
             ) : (
-               <div className="space-y-3"> {/* Skeleton loader */}
-                <div className="h-10 bg-muted rounded-md animate-pulse"></div>
-                <div className="h-10 bg-muted rounded-md animate-pulse"></div>
+               <div className="space-y-2"> 
+                <div className="h-8 bg-muted rounded-md animate-pulse"></div>
+                <div className="h-8 bg-muted rounded-md animate-pulse"></div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl flex items-center"><Users className="mr-2 h-5 w-5 text-primary" /> Registered Families</CardTitle>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/families">Manage <ExternalLink className="ml-1.5 h-3 w-3"/></Link>
+              </Button>
+            </div>
+            <CardDescription>Current families in the group.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isMounted && families.length > 0 ? (
+              <ul className="space-y-2">
+                {families.map((family) => (
+                  <li key={family.id} className="p-2 bg-secondary/50 rounded-md shadow-sm text-sm text-foreground truncate">
+                    {family.name} Family
+                  </li>
+                ))}
+                {localStorage.getItem("covenantLinkFamilies") && JSON.parse(localStorage.getItem("covenantLinkFamilies")!).length > 5 && (
+                  <li className="text-xs text-muted-foreground text-center pt-1">...and more.</li>
+                )}
+              </ul>
+            ) : isMounted ? (
+              <p className="text-muted-foreground text-center py-4 text-sm">No families registered.</p>
+            ) : (
+              <div className="space-y-2"> 
+                <div className="h-8 bg-muted rounded-md animate-pulse"></div>
+                <div className="h-8 bg-muted rounded-md animate-pulse"></div>
               </div>
             )}
           </CardContent>
@@ -196,3 +239,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
