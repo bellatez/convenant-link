@@ -51,42 +51,10 @@ export function ProjectDetailsDialog({ project, isOpen, onOpenChange, allRegiste
           <div className="space-y-6 py-4 pr-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Project Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                {project.description && (
-                  <p className="text-muted-foreground italic">{project.description}</p>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground flex items-center"><CalendarClock className="h-4 w-4 mr-2"/>Deadline:</span>
-                  <span>{format(project.deadline, "PPP")}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground flex items-center"><Target className="h-4 w-4 mr-2"/>Target Amount:</span>
-                  <span className="font-semibold">XAF {formatXAF(project.targetAmount)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground flex items-center"><TrendingUp className="h-4 w-4 mr-2"/>Total Raised:</span>
-                  <span className="font-semibold text-primary">XAF {formatXAF(totalContributed)}</span>
-                </div>
-                 <Progress value={overallProgressPercentage} className="h-3" aria-label={`Overall project progress ${overallProgressPercentage.toFixed(0)}%`} />
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground flex items-center"><Users2 className="h-4 w-4 mr-2"/>Participating Families:</span>
-                  <span>{project.numberOfFamilies}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground flex items-center"><HandCoins className="h-4 w-4 mr-2"/>Target per Family:</span>
-                  <span className="font-semibold">
-                    {targetPerFamily > 0 ? `XAF ${formatXAF(Math.ceil(targetPerFamily))}` : "N/A"}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
                 <CardTitle className="text-lg">Family Contribution Status</CardTitle>
-                <CardDescription>Progress of each registered family towards their target for this project.</CardDescription>
+                <CardDescription>
+                  Below is a breakdown of contributions from each registered family towards their calculated share of this project's target (approx. XAF {formatXAF(Math.ceil(targetPerFamily))} per family).
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {allRegisteredFamilies.length > 0 ? (
@@ -95,7 +63,7 @@ export function ProjectDetailsDialog({ project, isOpen, onOpenChange, allRegiste
                       <TableRow>
                         <TableHead>Family Name</TableHead>
                         <TableHead className="text-right">Contributed (XAF)</TableHead>
-                        <TableHead className="text-right">Target (XAF)</TableHead>
+                        <TableHead className="text-right">Individual Target (XAF)</TableHead>
                         <TableHead className="text-center w-[150px]">Progress (%)</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -138,6 +106,41 @@ export function ProjectDetailsDialog({ project, isOpen, onOpenChange, allRegiste
                 )}
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Overall Project Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                {project.description && (
+                  <p className="text-muted-foreground italic">{project.description}</p>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground flex items-center"><CalendarClock className="h-4 w-4 mr-2"/>Deadline:</span>
+                  <span>{format(project.deadline, "PPP")}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground flex items-center"><Target className="h-4 w-4 mr-2"/>Overall Target Amount:</span>
+                  <span className="font-semibold">XAF {formatXAF(project.targetAmount)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground flex items-center"><TrendingUp className="h-4 w-4 mr-2"/>Total Raised So Far:</span>
+                  <span className="font-semibold text-primary">XAF {formatXAF(totalContributed)}</span>
+                </div>
+                 <Progress value={overallProgressPercentage} className="h-3" aria-label={`Overall project progress ${overallProgressPercentage.toFixed(0)}%`} />
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground flex items-center"><Users2 className="h-4 w-4 mr-2"/>Target No. of Families:</span>
+                  <span>{project.numberOfFamilies}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground flex items-center"><HandCoins className="h-4 w-4 mr-2"/>Calculated Target per Family:</span>
+                  <span className="font-semibold">
+                    {targetPerFamily > 0 ? `XAF ${formatXAF(Math.ceil(targetPerFamily))}` : "N/A"}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
           </div>
         </ScrollArea>
         <div className="pt-4 border-t">
