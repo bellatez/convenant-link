@@ -1,6 +1,6 @@
 
 import type { LucideIcon } from 'lucide-react';
-import { Home, CalendarDays, BookOpenText, Puzzle, ListChecks, MapPin, Users } from 'lucide-react';
+import { Home, CalendarDays, BookOpenText, Puzzle, ListChecks, MapPin, Users, Sparkles } from 'lucide-react'; // Added Sparkles for games
 
 export type NavItem = {
   title: string;
@@ -41,9 +41,9 @@ export const siteConfig: SiteConfig = {
       icon: BookOpenText,
     },
     {
-      title: "Game Night",
+      title: "Fun & Games", // Updated Title
       href: "/games",
-      icon: Puzzle,
+      icon: Sparkles, // Using Sparkles icon, Puzzle can also work
     },
     {
       title: "Projects",
@@ -62,3 +62,4 @@ export const siteConfig: SiteConfig = {
     },
   ],
 };
+
