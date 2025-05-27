@@ -6,9 +6,10 @@ import { GameGeneratorForm } from "./game-generator-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Lightbulb, Gamepad2, Users, HelpCircle, CheckSquare, Zap, Play, Target as TargetIcon } from "lucide-react"; // Added TargetIcon
+import { Lightbulb, Gamepad2, Users, HelpCircle, CheckSquare, Zap, Play, Target as TargetIcon, MessageSquare } from "lucide-react"; 
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
+import { useToast } from "@/hooks/use-toast";
 
 interface GameOption {
   id: string;
@@ -17,9 +18,13 @@ interface GameOption {
   detailsTitle?: string;
   details: string[];
   exampleTitle?: string;
-  examples?: string[] | string; // Made optional
+  examples?: string[] | string; 
   icon: React.ElementType;
 }
+
+// Define icon aliases before they are used in predefinedGames
+const Brain = HelpCircle; 
+const MessageSquareHeart = MessageSquare; 
 
 const predefinedGames: GameOption[] = [
   {
@@ -28,7 +33,7 @@ const predefinedGames: GameOption[] = [
     description: "Timed quizzes or competitive Bible knowledge games.",
     detailsTitle: "Test Your Knowledge",
     details: ["Covers Old & New Testaments", "Various difficulty levels (soon)", "Track your high scores (soon)"],
-    icon: Brain, // Using Brain for Trivia
+    icon: Brain, 
   },
   {
     id: "connection-cards",
@@ -36,7 +41,7 @@ const predefinedGames: GameOption[] = [
     description: "Digital cards with thought-provoking or fun questions to spark conversation.",
     detailsTitle: "Deepen Your Bond",
     details: ["Categories: Faith, Dreams, Fun Facts", "Take turns drawing and discussing", "Promotes open communication"],
-    icon: MessageSquareHeart, // Using MessageSquareHeart
+    icon: MessageSquareHeart, 
   },
   {
     id: "verse-match",
@@ -84,20 +89,21 @@ const predefinedGames: GameOption[] = [
   },
 ];
 
-// Need to define these icons as they were used above or ensure they exist in lucide-react
-const Brain = HelpCircle; // Placeholder, replace with appropriate icon
-const MessageSquareHeart = MessageSquare; // Placeholder
-
 
 export default function GamesPage() {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const router = useRouter();
+  const { toast } = useToast();
 
   const selectedGame = predefinedGames.find(game => game.id === selectedGameId);
 
   const handlePlayGame = () => {
     if (selectedGame) {
-      router.push(`/games/${selectedGame.id}`); 
+      // toast({
+      //   title: `Starting ${selectedGame.title}...`,
+      //   description: "Full gameplay coming soon!",
+      // });
+      router.push(`/games/${selectedGame.id}`);
     }
   };
 
@@ -129,7 +135,7 @@ export default function GamesPage() {
           </CardContent>
         </Card>
 
-        {/* Card 2: Explore & Play Games */}
+        {/* Card 2: Explore Game Ideas */}
         <Card className="flex flex-col">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -209,7 +215,7 @@ export default function GamesPage() {
              )}
           </CardContent>
            <CardFooter>
-            <p className="text-xs text-muted-foreground">Select a game and click "Play Game" to navigate to its page.</p>
+            <p className="text-xs text-muted-foreground">Select a game and click "Play Game" to navigate to its page (Gameplay in development).</p>
           </CardFooter>
         </Card>
       </div>
