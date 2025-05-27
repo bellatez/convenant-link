@@ -4,7 +4,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 
 export default function WouldYouRatherPage() {
   return (
@@ -25,8 +25,19 @@ export default function WouldYouRatherPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center py-12">
-          <p className="text-xl text-muted-foreground">Interactive Would You Rather Game Coming Soon!</p>
-          {/* Placeholder for game UI */}
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <Users className="h-16 w-16 text-primary" />
+            <p className="text-xl text-muted-foreground">
+              Interactive Would You Rather Game Coming Soon!
+            </p>
+            <p className="text-sm text-muted-foreground max-w-md">
+              Get ready for thought-provoking and entertaining "Would You Rather" questions with a unique faith or fun perspective.
+            </p>
+            {/* Placeholder for question display and choice buttons */}
+            <Button variant="secondary" disabled className="mt-4">
+              Get Question (Soon)
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

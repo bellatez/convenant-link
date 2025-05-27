@@ -4,7 +4,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Target as TargetIcon } from "lucide-react"; // Renamed Target to TargetIcon
 
 export default function SpiritualGrowthQuestsPage() {
   return (
@@ -25,8 +25,19 @@ export default function SpiritualGrowthQuestsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center py-12">
-          <p className="text-xl text-muted-foreground">Interactive Spiritual Growth Quests Game Coming Soon!</p>
-          {/* Placeholder for game UI */}
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <TargetIcon className="h-16 w-16 text-primary" />
+            <p className="text-xl text-muted-foreground">
+              Interactive Spiritual Growth Quests Game Coming Soon!
+            </p>
+            <p className="text-sm text-muted-foreground max-w-md">
+              Take on mini-challenges designed to encourage spiritual disciplines, track your progress, and perhaps earn badges.
+            </p>
+            {/* Placeholder for quest list or progress display */}
+            <Button variant="secondary" disabled className="mt-4">
+              View Quests (Soon)
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

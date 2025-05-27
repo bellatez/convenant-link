@@ -4,7 +4,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckSquare } from "lucide-react";
 
 export default function VerseMatchPage() {
   return (
@@ -25,8 +25,19 @@ export default function VerseMatchPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center py-12">
-          <p className="text-xl text-muted-foreground">Interactive Verse Match Game Coming Soon!</p>
-          {/* Placeholder for game UI */}
+         <div className="flex flex-col items-center justify-center space-y-4">
+            <CheckSquare className="h-16 w-16 text-primary" />
+            <p className="text-xl text-muted-foreground">
+              Interactive Verse Match Game Coming Soon!
+            </p>
+            <p className="text-sm text-muted-foreground max-w-md">
+              Engage in fun challenges like matching verses to books, completing partial verses, or connecting themes to scriptures.
+            </p>
+            {/* Placeholder for game start or mode selection */}
+            <Button variant="secondary" disabled className="mt-4">
+              Start Matching (Soon)
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

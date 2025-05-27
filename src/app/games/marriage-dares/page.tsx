@@ -4,7 +4,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Zap } from "lucide-react";
 
 export default function MarriageDaresPage() {
   return (
@@ -25,8 +25,19 @@ export default function MarriageDaresPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center py-12">
-          <p className="text-xl text-muted-foreground">Interactive Marriage Dares Game Coming Soon!</p>
-          {/* Placeholder for game UI */}
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <Zap className="h-16 w-16 text-primary" />
+            <p className="text-xl text-muted-foreground">
+              Interactive Marriage Dares Game Coming Soon!
+            </p>
+            <p className="text-sm text-muted-foreground max-w-md">
+              Spin the wheel or get a random faith-based dare to complete with your partner, fostering fun and spiritual growth.
+            </p>
+            {/* Placeholder for spinner or dare display */}
+            <Button variant="secondary" disabled className="mt-4">
+              Get a Dare (Soon)
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
