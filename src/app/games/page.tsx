@@ -6,10 +6,9 @@ import { GameGeneratorForm } from "./game-generator-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Lightbulb, Gamepad2, Users, HelpCircle, Target as TargetIcon, CheckSquare, MessageSquare, Zap, Play, ArrowLeft } from "lucide-react";
+import { Lightbulb, Gamepad2, Users, HelpCircle, CheckSquare, Zap, Play, Target as TargetIcon } from "lucide-react"; // Added TargetIcon
 import { useState } from "react";
-import { useRouter } from 'next/navigation'; // Import useRouter
-import Link from "next/link";
+import { useRouter } from 'next/navigation';
 
 interface GameOption {
   id: string;
@@ -18,7 +17,7 @@ interface GameOption {
   detailsTitle?: string;
   details: string[];
   exampleTitle?: string;
-  examples: string[] | string;
+  examples?: string[] | string; // Made optional
   icon: React.ElementType;
 }
 
@@ -27,42 +26,35 @@ const predefinedGames: GameOption[] = [
     id: "bible-trivia",
     title: "Bible Trivia Challenge",
     description: "Timed quizzes or competitive Bible knowledge games.",
-    detailsTitle: "Modes",
-    details: ["Solo", "Couple-vs-Couple", "Team Play"],
-    exampleTitle: "Example Questions",
-    examples: [
-      "Who was the first couple in the Bible?",
-      "Finish the verse: ‘Love is patient, love is…’",
-    ],
-    icon: HelpCircle,
+    detailsTitle: "Test Your Knowledge",
+    details: ["Covers Old & New Testaments", "Various difficulty levels (soon)", "Track your high scores (soon)"],
+    icon: Brain, // Using Brain for Trivia
   },
   {
     id: "connection-cards",
     title: "Couple Connection Cards",
     description: "Digital cards with thought-provoking or fun questions to spark conversation.",
-    detailsTitle: "Categories",
-    details: ["Faith", "Childhood Memories", "Goals", "Love Language", "etc."],
-    exampleTitle: "Gameplay",
-    examples: "Take turns drawing a card and answering/discussing.",
-    icon: MessageSquare,
+    detailsTitle: "Deepen Your Bond",
+    details: ["Categories: Faith, Dreams, Fun Facts", "Take turns drawing and discussing", "Promotes open communication"],
+    icon: MessageSquareHeart, // Using MessageSquareHeart
   },
   {
     id: "verse-match",
-    title: "Verse Match",
+    title: "Verse Match Challenge",
     description: "Match verses to their book, complete the verse, or match themes to scriptures.",
-    detailsTitle: "Format",
-    details: ["Drag and drop", "Multiple choice", "Flashcards"],
+    detailsTitle: "Sharpen Your Scripture Memory",
+    details: ["Match verse snippets to books", "Fill-in-the-blank verses (soon)", "Theme-based matching (soon)"],
     icon: CheckSquare,
   },
   {
     id: "marriage-dares",
     title: "Marriage Dares (Faith Edition)",
     description: "A spinner or randomizer assigns faith-based challenges for couples.",
-    detailsTitle: "Example Dares",
+    detailsTitle: "Fun & Faith-Filled Challenges",
     details: [
-        "Pray together for 10 minutes tonight.",
-        "Plan a surprise note or gesture for your spouse this week.",
-        "Read a chapter of Proverbs together and discuss one insight.",
+        "Complete dares to strengthen your bond.",
+        "Focuses on prayer, service, and fun.",
+        "New dares added regularly (soon).",
     ],
     icon: Zap,
   },
@@ -70,11 +62,11 @@ const predefinedGames: GameOption[] = [
     id: "would-you-rather",
     title: "Would You Rather (Faith & Fun)",
     description: "Light-hearted or deep \"Would You Rather\" questions with a faith or fun twist.",
-    detailsTitle: "Example Questions",
+    detailsTitle: "Thought-Provoking Choices",
     details: [
-      "Would you rather pray in a storm or sing in a desert?",
-      "Would you rather have dinner with Esther or Ruth?",
-      "Would you rather lead a small group or write a devotional?",
+      "Discuss your choices as a couple/group.",
+      "Explores faith perspectives and preferences.",
+      "Great for icebreakers or deeper talks.",
     ],
     icon: Users,
   },
@@ -82,21 +74,24 @@ const predefinedGames: GameOption[] = [
     id: "spiritual-growth-quests",
     title: "Spiritual Growth Quests",
     description: "Mini challenges designed to encourage spiritual disciplines and growth, potentially unlocking badges or recognition.",
-    detailsTitle: "Example Quests",
+    detailsTitle: "Embark on Faith Adventures",
     details: [
-      "Read 3 devotionals this week.",
-      "Fast as a couple for one meal or day.",
-      "Share a testimony or a recent spiritual insight with the group.",
-      "Memorize a new Bible verse together.",
+      "Complete quests individually or as a couple.",
+      "Focus on prayer, study, and service.",
+      "Track progress and earn achievements (soon).",
     ],
     icon: TargetIcon,
   },
 ];
 
+// Need to define these icons as they were used above or ensure they exist in lucide-react
+const Brain = HelpCircle; // Placeholder, replace with appropriate icon
+const MessageSquareHeart = MessageSquare; // Placeholder
+
 
 export default function GamesPage() {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
-  const router = useRouter(); // Initialize useRouter
+  const router = useRouter();
 
   const selectedGame = predefinedGames.find(game => game.id === selectedGameId);
 
@@ -142,7 +137,7 @@ export default function GamesPage() {
               <CardTitle className="text-xl">Explore Game Ideas</CardTitle>
             </div>
             <CardDescription>
-              Select a game from the list below to see its description and how to play.
+              Select a game from the list below to see its description and launch it.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-grow flex flex-col space-y-4">
