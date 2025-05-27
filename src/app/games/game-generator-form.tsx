@@ -20,10 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Lightbulb } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, Lightbulb, HelpCircle, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateChristianCoupleGame, type GenerateChristianCoupleGameOutput } from "@/ai/flows/generate-christian-couple-game";
+import { Separator } from "@/components/ui/separator";
 
 const moods = ["Fun", "Deep", "Spiritual", "Icebreaker", "Challenge", "Trivia"] as const;
 
@@ -35,7 +36,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function GameGeneratorForm() {
   const [isLoading, setIsLoading] = useState(false);
-  const [generatedGames, setGeneratedGames] = useState<GenerateChristianCoupleGameOutput | null>(null);
+  const [generatedGame, setGeneratedGame] = useState<GenerateChristianCoupleGameOutput | null>(null);
   const { toast } = useToast();
 
   const form = useForm<FormValues>({
@@ -47,16 +48,16 @@ export function GameGeneratorForm() {
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setIsLoading(true);
-    setGeneratedGames(null);
+    setGeneratedGame(null);
     try {
       const result = await generateChristianCoupleGame({ mood: data.mood });
-      setGeneratedGames(result);
+      setGeneratedGame(result);
     } catch (error) {
       console.error("Error generating game:", error);
       toast({
         variant: "destructive",
         title: "Error Generating Game",
-        description: "Could not generate game ideas. Please try again.",
+        description: "Could not generate a game idea. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -98,7 +99,7 @@ export function GameGeneratorForm() {
                 Generating...
               </>
             ) : (
-              "Generate Games"
+              "Generate Game Idea"
             )}
           </Button>
         </form>
@@ -110,28 +111,41 @@ export function GameGeneratorForm() {
         </div>
       )}
 
-      {generatedGames && generatedGames.gameIdeas && generatedGames.gameIdeas.length > 0 && (
+      {generatedGame && generatedGame.name && (
         <Card className="mt-6 shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lightbulb className="h-6 w-6 text-primary" />
-              Game Ideas for a "{form.getValues("mood")}" Mood
-            </CardTitle>
+            <div className="flex items-center gap-3 mb-2">
+              <Lightbulb className="h-7 w-7 text-primary" />
+              <CardTitle className="text-2xl">{generatedGame.name}</CardTitle>
+            </div>
+            <CardDescription>
+              A game idea for a "{form.getValues("mood")}" mood.
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <ul className="list-disc space-y-3 pl-5 text-foreground">
-              {generatedGames.gameIdeas.map((idea, index) => (
-                <li key={index} className="text-md leading-relaxed">{idea}</li>
-              ))}
-            </ul>
+          <CardContent className="space-y-4">
+            <div>
+              <h3 className="text-lg font-medium mb-2 flex items-center gap-2 text-foreground">
+                <HelpCircle className="h-5 w-5 text-accent-foreground" />
+                How to Play
+              </h3>
+              <p className="text-muted-foreground whitespace-pre-line">{generatedGame.instructions}</p>
+            </div>
+            <Separator />
+            <div>
+              <h3 className="text-lg font-medium mb-2 flex items-center gap-2 text-foreground">
+                <Users className="h-5 w-5 text-accent-foreground" />
+                Benefits for the Group
+              </h3>
+              <p className="text-muted-foreground whitespace-pre-line">{generatedGame.benefits}</p>
+            </div>
           </CardContent>
         </Card>
       )}
 
-      {generatedGames && (!generatedGames.gameIdeas || generatedGames.gameIdeas.length === 0) && !isLoading && (
+      {form.formState.isSubmitted && !isLoading && !generatedGame?.name && (
          <Card className="mt-6">
           <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">No game ideas were generated for this mood. Try a different selection!</p>
+            <p className="text-center text-muted-foreground">Could not generate a game idea for this mood. Try a different selection or try again!</p>
           </CardContent>
         </Card>
       )}
