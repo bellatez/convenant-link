@@ -1,5 +1,6 @@
+
 import type { LucideIcon } from 'lucide-react';
-import { Home, CalendarDays, BookOpenText, Puzzle, MessageSquareQuote, ListChecks, MapPin } from 'lucide-react';
+import { Home, CalendarDays, BookOpenText, Puzzle, ListChecks, MapPin } from 'lucide-react';
 
 export type NavItem = {
   title: string;
@@ -43,11 +44,6 @@ export const siteConfig: SiteConfig = {
       title: "Game Night",
       href: "/games",
       icon: Puzzle,
-    },
-    {
-      title: "Discussions",
-      href: "/discussions",
-      icon: MessageSquareQuote,
     },
     {
       title: "Projects",
