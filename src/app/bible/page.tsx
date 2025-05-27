@@ -18,10 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, BookOpen, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, BookOpen, AlertTriangle, ChevronLeft, ChevronRight, Highlighter, NotebookText } from "lucide-react";
 import { bibleBookList, getBook, type BibleBook } from "@/lib/bible-data";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface BibleVerse {
   book_id: string;
@@ -50,32 +52,36 @@ export default function BiblePage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [highlightedVerses, setHighlightedVerses] = useState<Set<number>>(new Set());
+  const [chapterNotes, setChapterNotes] = useState<string>("");
+
   useEffect(() => {
     const book = getBook(selectedBookName);
     if (book) {
       setMaxChapters(book.chapters);
-      // Reset chapter to 1 if current chapter exceeds new max, or if it's not the default "1"
       if (selectedChapter > book.chapters || (selectedChapter !== 1 && book.name !== selectedBookName)) {
         setSelectedChapter(1);
       }
     }
   }, [selectedBookName, selectedChapter]);
 
-
   const fetchBibleChapter = async (book: string, chapter: number) => {
     setIsLoading(true);
     setError(null);
     setBibleContent(null);
+    // Reset highlights and notes for the new chapter
+    setHighlightedVerses(new Set());
+    setChapterNotes(""); 
     try {
       const response = await fetch(
-        `https://bible-api.com/${encodeURIComponent(book)}+${chapter}?translation=kjv`
+        `https://bible-api.com/${encodeURIComponent(book)}+${chapter}?translation=amplified`
       );
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
       const data: BibleApiResponse = await response.json();
-      if (data.error) { // Some APIs might return 200 OK with an error in the body
+      if (data.error) { 
         setError(data.error);
       } else {
         setBibleContent(data);
@@ -92,16 +98,20 @@ export default function BiblePage() {
     setSelectedBookName(bookName);
     const book = getBook(bookName);
     if (book) {
-      setSelectedChapter(1); // Reset to chapter 1 when book changes
-      setBibleContent(null); // Clear previous content
-      setError(null); // Clear previous error
+      setSelectedChapter(1); 
+      setBibleContent(null); 
+      setError(null);
+      setHighlightedVerses(new Set());
+      setChapterNotes("");
     }
   };
 
   const handleChapterChange = (chapter: string) => {
     setSelectedChapter(Number(chapter));
-    setBibleContent(null); // Clear previous content
+    setBibleContent(null); 
     setError(null);
+    setHighlightedVerses(new Set());
+    setChapterNotes("");
   };
 
   const handleSubmit = (e?: React.FormEvent) => {
@@ -114,20 +124,32 @@ export default function BiblePage() {
   const navigateChapter = (direction: 'next' | 'prev') => {
     let newChapter = selectedChapter;
     if (direction === 'next') {
-      newChapter = selectedChapter < maxChapters ? selectedChapter + 1 : 1; // Loop to first chapter
+      newChapter = selectedChapter < maxChapters ? selectedChapter + 1 : 1; 
     } else {
-      newChapter = selectedChapter > 1 ? selectedChapter - 1 : maxChapters; // Loop to last chapter
+      newChapter = selectedChapter > 1 ? selectedChapter - 1 : maxChapters; 
     }
     setSelectedChapter(newChapter);
     fetchBibleChapter(selectedBookName, newChapter);
   };
 
-  // Automatically fetch Genesis 1 on initial load
   useEffect(() => {
+    setHighlightedVerses(new Set());
+    setChapterNotes('');
     fetchBibleChapter(bibleBookList[0].name, 1);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const toggleHighlight = (verseNumber: number) => {
+    setHighlightedVerses(prevHighlights => {
+      const newHighlights = new Set(prevHighlights);
+      if (newHighlights.has(verseNumber)) {
+        newHighlights.delete(verseNumber);
+      } else {
+        newHighlights.add(verseNumber);
+      }
+      return newHighlights;
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -135,13 +157,13 @@ export default function BiblePage() {
         <CardHeader>
           <CardTitle>Interactive Bible Study</CardTitle>
           <CardDescription>
-            Select a book and chapter to read from the King James Version.
+            Select a book and chapter to read from the Amplified Bible. You can also highlight verses and take notes for the chapter.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end mb-6">
             <div className="space-y-1.5">
-              <label htmlFor="book-select" className="text-sm font-medium">Book</label>
+              <Label htmlFor="book-select" className="text-sm font-medium">Book</Label>
               <Select value={selectedBookName} onValueChange={handleBookChange}>
                 <SelectTrigger id="book-select">
                   <SelectValue placeholder="Select a book" />
@@ -157,7 +179,7 @@ export default function BiblePage() {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="chapter-select" className="text-sm font-medium">Chapter</label>
+              <Label htmlFor="chapter-select" className="text-sm font-medium">Chapter</Label>
               <Select
                 value={selectedChapter.toString()}
                 onValueChange={handleChapterChange}
@@ -212,37 +234,78 @@ export default function BiblePage() {
           )}
 
           {bibleContent && !error && (
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle className="text-2xl">{bibleContent.reference}</CardTitle>
-                <CardDescription>King James Version</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[500px] pr-4">
-                  <div className="space-y-3 text-foreground/90 leading-relaxed">
-                    {bibleContent.verses.map((verse) => (
-                       <p key={verse.verse}>
-                        <sup className="text-xs text-primary font-semibold mr-1">{verse.verse}</sup>
-                        {verse.text}
-                      </p>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-              <CardFooter className="flex justify-between items-center pt-4 border-t">
-                <Button variant="outline" onClick={() => navigateChapter('prev')} disabled={isLoading}>
-                  <ChevronLeft className="h-4 w-4 mr-2" />
-                  Previous
-                </Button>
-                <p className="text-sm text-muted-foreground">
-                  Chapter {selectedChapter} of {maxChapters}
-                </p>
-                <Button variant="outline" onClick={() => navigateChapter('next')} disabled={isLoading}>
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
-              </CardFooter>
-            </Card>
+            <>
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle className="text-2xl">{bibleContent.reference}</CardTitle>
+                  <CardDescription>{bibleContent.translation_name || "Amplified Bible"}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px] pr-4">
+                    <div className="space-y-1 text-foreground/90 leading-relaxed">
+                      {bibleContent.verses.map((verse) => (
+                        <div 
+                            key={verse.verse} 
+                            className={`flex items-start gap-2 py-1 rounded-md transition-colors ${highlightedVerses.has(verse.verse) ? 'bg-primary/10' : ''}`}
+                        >
+                            <span className="pl-1 flex-shrink-0 pt-0.5">
+                                <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 p-0 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                                onClick={() => toggleHighlight(verse.verse)}
+                                title={highlightedVerses.has(verse.verse) ? `Remove highlight from verse ${verse.verse}` : `Highlight verse ${verse.verse}`}
+                                aria-pressed={highlightedVerses.has(verse.verse)}
+                                >
+                                <Highlighter className={`h-4 w-4 ${highlightedVerses.has(verse.verse) ? 'text-primary fill-primary/30' : 'text-muted-foreground hover:text-primary/80'}`} />
+                                </Button>
+                            </span>
+                            <p className="flex-grow pr-1">
+                                <sup className="text-xs text-primary font-semibold mr-1">{verse.verse}</sup>
+                                {verse.text}
+                            </p>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+                <CardFooter className="flex justify-between items-center pt-4 border-t">
+                  <Button variant="outline" onClick={() => navigateChapter('prev')} disabled={isLoading}>
+                    <ChevronLeft className="h-4 w-4 mr-2" />
+                    Previous
+                  </Button>
+                  <p className="text-sm text-muted-foreground">
+                    Chapter {selectedChapter} of {maxChapters}
+                  </p>
+                  <Button variant="outline" onClick={() => navigateChapter('next')} disabled={isLoading}>
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </CardFooter>
+              </Card>
+
+              <Card className="mt-6 shadow-md">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-xl">
+                    <NotebookText className="mr-2 h-5 w-5 text-primary" /> Chapter Notes
+                  </CardTitle>
+                  <CardDescription>
+                    Your personal notes for {bibleContent.reference}. These are session-based and will reset if you change chapters/books.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Label htmlFor="chapter-notes-textarea" className="sr-only">Chapter Notes for {bibleContent.reference}</Label>
+                  <Textarea
+                    id="chapter-notes-textarea"
+                    placeholder="Type your reflections, questions, or key points here..."
+                    value={chapterNotes}
+                    onChange={(e) => setChapterNotes(e.target.value)}
+                    rows={6}
+                    className="w-full text-sm"
+                  />
+                </CardContent>
+              </Card>
+            </>
           )}
         </CardContent>
       </Card>
