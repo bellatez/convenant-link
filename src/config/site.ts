@@ -1,6 +1,6 @@
 
 import type { LucideIcon } from 'lucide-react';
-import { Home, CalendarDays, BookOpenText, Puzzle, ListChecks, MapPin } from 'lucide-react';
+import { Home, CalendarDays, BookOpenText, Puzzle, ListChecks, MapPin, Users } from 'lucide-react';
 
 export type NavItem = {
   title: string;
@@ -54,6 +54,11 @@ export const siteConfig: SiteConfig = {
       title: "Outing Spots",
       href: "/outings",
       icon: MapPin,
+    },
+    {
+      title: "Families",
+      href: "/families",
+      icon: Users,
     },
   ],
 };
