@@ -2,14 +2,13 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { GameGeneratorForm } from "./game-generator-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Lightbulb, Gamepad2, Users, HelpCircle, CheckSquare, Zap, Play, Target as TargetIcon, MessageSquare } from "lucide-react"; 
+import { Lightbulb, Gamepad2, Users, HelpCircle, CheckSquare, Zap, Play, Target as TargetIcon, MessageSquare, ArrowRight } from "lucide-react"; 
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
-import { useToast } from "@/hooks/use-toast";
+// import { useToast } from "@/hooks/use-toast"; // No longer needed here for play game button
 
 interface GameOption {
   id: string;
@@ -89,21 +88,26 @@ const predefinedGames: GameOption[] = [
   },
 ];
 
+const moods = ["Fun", "Deep", "Spiritual", "Icebreaker", "Challenge", "Trivia"] as const;
+
 
 export default function GamesPage() {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [selectedMoodForGenerator, setSelectedMoodForGenerator] = useState<string>(moods[0]);
   const router = useRouter();
-  const { toast } = useToast();
+  // const { toast } = useToast(); // No longer needed here
 
   const selectedGame = predefinedGames.find(game => game.id === selectedGameId);
 
   const handlePlayGame = () => {
     if (selectedGame) {
-      // toast({
-      //   title: `Starting ${selectedGame.title}...`,
-      //   description: "Full gameplay coming soon!",
-      // });
       router.push(`/games/${selectedGame.id}`);
+    }
+  };
+
+  const handleGetGroupGameIdea = () => {
+    if (selectedMoodForGenerator) {
+      router.push(`/games/group-game-generator?mood=${selectedMoodForGenerator}`);
     }
   };
 
@@ -113,26 +117,46 @@ export default function GamesPage() {
         <CardHeader>
           <CardTitle className="text-2xl">Fun &amp; Games</CardTitle>
           <CardDescription>
-            Spark joy and connection! Generate a unique group game with AI or explore ideas for your next gathering.
+            Spark joy and connection! Generate unique group game ideas with AI or explore and play our selection of games.
           </CardDescription>
         </CardHeader>
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Card 1: AI Group Game Generator */}
+        {/* Card 1: Group Game Ideas (New Navigation) */}
         <Card className="flex flex-col">
           <CardHeader>
             <div className="flex items-center gap-3">
               <Lightbulb className="h-7 w-7 text-primary" />
-              <CardTitle className="text-xl">AI Group Game Generator</CardTitle>
+              <CardTitle className="text-xl">Group Game Ideas</CardTitle>
             </div>
             <CardDescription>
-              Select a mood and let our AI suggest a unique faith-based game for your group.
+              Select a mood and get a unique faith-based game idea for your group, complete with instructions and benefits.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex-grow">
-            <GameGeneratorForm />
+          <CardContent className="flex-grow space-y-4">
+            <div>
+              <Label htmlFor="mood-select-nav" className="text-sm font-medium">Select a Mood</Label>
+              <Select onValueChange={setSelectedMoodForGenerator} defaultValue={selectedMoodForGenerator}>
+                <SelectTrigger id="mood-select-nav" className="mt-1">
+                  <SelectValue placeholder="Choose a mood..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {moods.map((mood) => (
+                    <SelectItem key={mood} value={mood}>
+                      {mood}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleGetGroupGameIdea} className="w-full" disabled={!selectedMoodForGenerator}>
+              Get Group Game Idea <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </CardContent>
+           <CardFooter>
+            <p className="text-xs text-muted-foreground">Generates one game idea on a new page.</p>
+          </CardFooter>
         </Card>
 
         {/* Card 2: Explore Game Ideas */}
@@ -140,7 +164,7 @@ export default function GamesPage() {
           <CardHeader>
             <div className="flex items-center gap-3">
               <Gamepad2 className="h-7 w-7 text-primary" />
-              <CardTitle className="text-xl">Explore Game Ideas</CardTitle>
+              <CardTitle className="text-xl">Explore & Play Games</CardTitle>
             </div>
             <CardDescription>
               Select a game from the list below to see its description and launch it.
@@ -215,10 +239,12 @@ export default function GamesPage() {
              )}
           </CardContent>
            <CardFooter>
-            <p className="text-xs text-muted-foreground">Select a game and click "Play Game" to navigate to its page (Gameplay in development).</p>
+            <p className="text-xs text-muted-foreground">Select a game and click "Play Game" to navigate to its page.</p>
           </CardFooter>
         </Card>
       </div>
     </div>
   );
 }
+
+    
