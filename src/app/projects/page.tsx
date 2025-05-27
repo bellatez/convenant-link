@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { ProjectForm } from "./project-form";
 import type { Project, Contribution } from "./types";
-import { Target, PlusCircle, CalendarClock, DollarSign, Users, Edit, Trash2 } from "lucide-react";
+import { Target, PlusCircle, CalendarClock, Edit, Trash2, Users2, Info, TrendingUp, HandCoins } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
@@ -26,7 +26,6 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     setIsMounted(true);
-    // Load projects from localStorage if available (basic persistence)
     const storedProjects = localStorage.getItem("covenantLinkProjects");
     if (storedProjects) {
       setProjects(JSON.parse(storedProjects, (key, value) => {
@@ -58,8 +57,10 @@ export default function ProjectsPage() {
   };
   
   const handleDeleteProject = (projectId: string) => {
-    // Add confirmation dialog here in a real app
-    setProjects(prev => prev.filter(p => p.id !== projectId));
+    // Basic confirmation for now
+    if (confirm("Are you sure you want to delete this project and all its contributions?")) {
+      setProjects(prev => prev.filter(p => p.id !== projectId));
+    }
   };
 
   const calculateCurrentAmount = (contributions: Contribution[]): number => {
@@ -88,7 +89,7 @@ export default function ProjectsPage() {
             <div>
               <CardTitle className="text-2xl">Group Projects & Contributions</CardTitle>
               <CardDescription>
-                Track group projects, their goals, deadlines, and contributions.
+                Track group projects, their goals, deadlines, participating families, and contributions.
               </CardDescription>
             </div>
             <Button onClick={handleAddNewProject} className="shrink-0">
@@ -105,7 +106,7 @@ export default function ProjectsPage() {
           setIsProjectFormOpen(isOpen);
           if (!isOpen) setProjectToEdit(null);
         }}>
-        <DialogContent className="sm:max-w-[525px]">
+        <DialogContent className="sm:max-w-[525px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{projectToEdit ? "Edit Project" : "Create a New Project"}</DialogTitle>
             <DialogDescription>
@@ -124,11 +125,13 @@ export default function ProjectsPage() {
 
       {projects.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project) => {
+          {projects.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime()).map((project) => {
             const currentAmount = calculateCurrentAmount(project.contributions);
             const progressPercentage = project.targetAmount > 0 ? (currentAmount / project.targetAmount) * 100 : 0;
+            const amountPerFamily = project.numberOfFamilies > 0 ? project.targetAmount / project.numberOfFamilies : 0;
+
             return (
-              <Card key={project.id} className="flex flex-col shadow-lg">
+              <Card key={project.id} className="flex flex-col shadow-lg break-inside-avoid-column">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-xl">{project.name}</CardTitle>
@@ -148,37 +151,54 @@ export default function ProjectsPage() {
                     <span>Deadline: {format(project.deadline, "PPP")}</span>
                   </div>
                 </CardHeader>
-                <CardContent className="flex-grow space-y-3">
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-baseline text-sm">
-                      <span className="text-muted-foreground">Progress</span>
-                      <span className="font-semibold text-primary">
-                        ${currentAmount.toFixed(2)} / ${project.targetAmount.toFixed(2)}
-                      </span>
+                <CardContent className="flex-grow space-y-4">
+                  {project.description && (
+                    <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <Info className="h-4 w-4 mt-0.5 flex-shrink-0 text-sky-600"/>
+                        <p className="italic">{project.description}</p>
                     </div>
-                    <Progress value={progressPercentage} aria-label={`${project.name} progress ${progressPercentage.toFixed(0)}%`} />
+                  )}
+                  <div className="space-y-2">
+                    <div>
+                      <div className="flex justify-between items-baseline text-sm mb-0.5">
+                        <span className="text-muted-foreground flex items-center"><TrendingUp className="h-4 w-4 mr-1.5"/>Overall Progress</span>
+                        <span className="font-semibold text-primary">
+                          XAF {currentAmount.toFixed(0)} / {project.targetAmount.toFixed(0)}
+                        </span>
+                      </div>
+                      <Progress value={progressPercentage} aria-label={`${project.name} progress ${progressPercentage.toFixed(0)}%`} />
+                    </div>
+
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground flex items-center"><Users2 className="h-4 w-4 mr-1.5"/>Families</span>
+                        <span className="font-medium">{project.numberOfFamilies}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground flex items-center"><Target className="h-4 w-4 mr-1.5"/>Target / Family</span>
+                        <span className="font-medium">XAF {amountPerFamily > 0 ? amountPerFamily.toFixed(0) : "N/A"}</span>
+                    </div>
                   </div>
                   
                   <div>
                     <h4 className="text-sm font-medium mb-1 flex items-center gap-1.5 text-foreground">
-                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <HandCoins className="h-4 w-4 text-muted-foreground" />
                       Contributions ({project.contributions.length})
                     </h4>
                     {project.contributions.length > 0 ? (
-                      <ul className="text-xs text-muted-foreground list-disc list-inside max-h-20 overflow-y-auto">
-                        {project.contributions.slice(0,3).map(c => ( // Show first 3
-                            <li key={c.id}>{c.coupleName}: ${c.amount.toFixed(2)}</li>
+                      <ul className="text-xs text-muted-foreground list-disc list-inside max-h-24 overflow-y-auto space-y-0.5 pr-2">
+                        {project.contributions.slice(0,5).map(c => ( // Show first 5
+                            <li key={c.id} className="truncate">{c.coupleName}: XAF {c.amount.toFixed(0)}</li>
                         ))}
-                        {project.contributions.length > 3 && <li>...and {project.contributions.length-3} more</li>}
+                        {project.contributions.length > 5 && <li>...and {project.contributions.length-5} more</li>}
                       </ul>
                     ) : (
                       <p className="text-xs text-muted-foreground italic">No contributions yet.</p>
                     )}
                   </div>
                 </CardContent>
-                <CardFooter>
-                  <Button variant="outline" className="w-full" onClick={() => alert(`Adding contribution to ${project.name} - Coming soon!`)}>
-                    <DollarSign className="mr-2 h-4 w-4" /> Add Contribution
+                <CardFooter className="border-t pt-4">
+                  <Button variant="outline" className="w-full" onClick={() => alert(`Adding contribution to ${project.name} (XAF) - Coming soon!`)}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Contribution
                   </Button>
                 </CardFooter>
               </Card>

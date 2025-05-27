@@ -9,7 +9,9 @@ export interface Contribution {
 export interface Project {
   id: string;
   name: string;
+  description: string;
   targetAmount: number;
+  numberOfFamilies: number;
   deadline: Date;
   contributions: Contribution[];
 }

@@ -9,12 +9,14 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, Loader2 } from "lucide-react";
@@ -25,7 +27,9 @@ import { useToast } from "@/hooks/use-toast";
 
 const projectFormSchema = z.object({
   name: z.string().min(3, "Project name must be at least 3 characters long."),
+  description: z.string().min(10, "Description must be at least 10 characters long."),
   targetAmount: z.coerce.number().positive("Target amount must be a positive number."),
+  numberOfFamilies: z.coerce.number().int().positive("Number of families must be a positive integer."),
   deadline: z.date({ required_error: "Please select a deadline for the project." }),
 });
 
@@ -46,7 +50,9 @@ export function ProjectForm({ setProjects, onFormSubmit, projectToEdit }: Projec
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
       name: projectToEdit?.name || "",
+      description: projectToEdit?.description || "",
       targetAmount: projectToEdit?.targetAmount || 0,
+      numberOfFamilies: projectToEdit?.numberOfFamilies || 1,
       deadline: projectToEdit?.deadline || new Date(new Date().setMonth(new Date().getMonth() + 1)), // Default to one month from now
     },
   });
@@ -79,7 +85,13 @@ export function ProjectForm({ setProjects, onFormSubmit, projectToEdit }: Projec
           description: `"${data.name}" has been updated.`,
         });
       }
-      form.reset({ name: "", targetAmount: 0, deadline: new Date(new Date().setMonth(new Date().getMonth() + 1)) });
+      form.reset({ 
+        name: "", 
+        description: "",
+        targetAmount: 0, 
+        numberOfFamilies: 1,
+        deadline: new Date(new Date().setMonth(new Date().getMonth() + 1)) 
+      });
       onFormSubmit();
     } catch (error) {
       console.error("Error saving project:", error);
@@ -112,17 +124,47 @@ export function ProjectForm({ setProjects, onFormSubmit, projectToEdit }: Projec
 
         <FormField
           control={form.control}
-          name="targetAmount"
+          name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Target Amount ($)</FormLabel>
+              <FormLabel>Project Description</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="e.g., 500" {...field} />
+                <Textarea placeholder="Briefly describe the project's purpose..." {...field} rows={3} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="targetAmount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Target Amount (XAF)</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="e.g., 500000" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="numberOfFamilies"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Number of Families</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="e.g., 10" {...field} min="1" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <FormField
           control={form.control}
