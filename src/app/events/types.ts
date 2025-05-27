@@ -10,7 +10,8 @@ export interface Event {
   title: string;
   date: Date;
   time: string; // HH:mm format
-  location?: string;
+  location: string; // Now obligatory
   suggestedTopics: TopicProposal[]; // Array of 3 generated topics
   selectedTopicId: string | null; // ID of the topic chosen by the organizer
 }
+

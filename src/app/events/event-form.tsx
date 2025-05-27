@@ -32,7 +32,7 @@ const eventFormSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters long."),
   date: z.date({ required_error: "Please select a date for the event." }),
   time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Please enter a valid time in HH:MM format (e.g., 14:30)."),
-  location: z.string().optional(),
+  location: z.string().min(1, "Location is required."),
   selectedTopicId: z.string({required_error: "Please select a discussion topic."}).min(1, "Please select a discussion topic."),
 });
 
@@ -77,9 +77,9 @@ export function EventForm({ setEvents, onFormSubmit, eventToEdit }: EventFormPro
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
-      title: eventToEdit?.title || "",
+      title: eventToEdit?.title || "Monthly Fellowship",
       date: eventToEdit?.date || (formMode === "create" ? getNextFirstSunday() : new Date()),
-      time: eventToEdit?.time || "18:00", // Default time
+      time: eventToEdit?.time || "14:30", 
       location: eventToEdit?.location || "",
       selectedTopicId: eventToEdit?.selectedTopicId || undefined,
     },
@@ -115,7 +115,7 @@ export function EventForm({ setEvents, onFormSubmit, eventToEdit }: EventFormPro
             title: eventToEdit.title,
             date: eventToEdit.date,
             time: eventToEdit.time,
-            location: eventToEdit.location || "",
+            location: eventToEdit.location, // location is now always present
             selectedTopicId: eventToEdit.selectedTopicId || undefined,
         });
     }
@@ -160,7 +160,13 @@ export function EventForm({ setEvents, onFormSubmit, eventToEdit }: EventFormPro
           description: `"${data.title}" has been updated.`,
         });
       }
-      form.reset({ title: "", date: getNextFirstSunday(), time: "18:00", location: "", selectedTopicId: undefined });
+      form.reset({ 
+        title: "Monthly Fellowship", 
+        date: getNextFirstSunday(), 
+        time: "14:30", 
+        location: "", 
+        selectedTopicId: undefined 
+      });
       setSuggestedTopics([]); // Clear topics for next "create" form
       onFormSubmit();
     } catch (error) {
@@ -255,7 +261,7 @@ export function EventForm({ setEvents, onFormSubmit, eventToEdit }: EventFormPro
           name="location"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Location (Optional)</FormLabel>
+              <FormLabel>Location</FormLabel>
               <FormControl>
                 <Input placeholder="e.g., Church Hall or Zoom Link" {...field} />
               </FormControl>
@@ -326,3 +332,4 @@ export function EventForm({ setEvents, onFormSubmit, eventToEdit }: EventFormPro
     </Form>
   );
 }
+
