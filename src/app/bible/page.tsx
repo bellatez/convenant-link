@@ -59,35 +59,60 @@ export default function BiblePage() {
     const book = getBook(selectedBookName);
     if (book) {
       setMaxChapters(book.chapters);
+      // Reset chapter to 1 if it's invalid for the new book, or if the book changes and chapter isn't 1.
       if (selectedChapter > book.chapters || (selectedChapter !== 1 && book.name !== selectedBookName)) {
         setSelectedChapter(1);
       }
     }
-  }, [selectedBookName, selectedChapter]);
+  }, [selectedBookName]); // Removed selectedChapter from dependencies to avoid loop, handle in handleBookChange
 
   const fetchBibleChapter = async (book: string, chapter: number) => {
     setIsLoading(true);
     setError(null);
     setBibleContent(null);
-    // Reset highlights and notes for the new chapter
-    setHighlightedVerses(new Set());
-    setChapterNotes(""); 
+    // Reset highlights and notes for the new chapter only if it's a new fetch, not for initial load if content already there
+    if (bibleContent?.reference !== `${book} ${chapter}`) { // A bit simplistic check, might need refinement
+        setHighlightedVerses(new Set());
+        setChapterNotes("");
+    }
+    
     try {
       const response = await fetch(
-        `https://bible-api.com/${encodeURIComponent(book)}+${chapter}?translation=amplified`
+        `https://bible-api.com/${encodeURIComponent(book)}+${chapter}?translation=AMP` // Changed to AMP
       );
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        let errorMsg = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData && errorData.error) {
+            errorMsg = errorData.error;
+          }
+        } catch (jsonError) {
+          // Body wasn't JSON or other error, try to get raw text.
+          try {
+            const textResponse = await response.text();
+            errorMsg = `HTTP error! status: ${response.status}. Response: ${textResponse.substring(0,100)}`;
+          } catch (textError) {
+            // Fallback if text() also fails
+             errorMsg = `HTTP error! status: ${response.status}. Unable to retrieve error details.`;
+          }
+        }
+        throw new Error(errorMsg);
       }
       const data: BibleApiResponse = await response.json();
       if (data.error) { 
         setError(data.error);
-      } else {
+        setBibleContent(null);
+      } else if (!data.verses || data.verses.length === 0) {
+        setError("Chapter content not found or is empty for this translation.");
+        setBibleContent(null);
+      }
+      else {
         setBibleContent(data);
       }
     } catch (e: any) {
       setError(e.message || "Failed to fetch Bible content.");
+      setBibleContent(null);
       console.error("Error fetching Bible content:", e);
     } finally {
       setIsLoading(false);
@@ -98,20 +123,25 @@ export default function BiblePage() {
     setSelectedBookName(bookName);
     const book = getBook(bookName);
     if (book) {
+      // Reset chapter to 1 when book changes
       setSelectedChapter(1); 
+      // Clear previous content and errors, notes, highlights
       setBibleContent(null); 
       setError(null);
       setHighlightedVerses(new Set());
       setChapterNotes("");
+      // No automatic fetch here, user will click "Load Chapter" or it's handled by chapter change
     }
   };
 
   const handleChapterChange = (chapter: string) => {
     setSelectedChapter(Number(chapter));
+    // Clear previous content and errors, notes, highlights
     setBibleContent(null); 
     setError(null);
     setHighlightedVerses(new Set());
     setChapterNotes("");
+    // No automatic fetch here, user will click "Load Chapter"
   };
 
   const handleSubmit = (e?: React.FormEvent) => {
@@ -123,21 +153,59 @@ export default function BiblePage() {
   
   const navigateChapter = (direction: 'next' | 'prev') => {
     let newChapter = selectedChapter;
+    let currentBookName = selectedBookName;
+    const currentBook = getBook(currentBookName);
+
+    if (!currentBook) return; // Should not happen
+
     if (direction === 'next') {
-      newChapter = selectedChapter < maxChapters ? selectedChapter + 1 : 1; 
-    } else {
-      newChapter = selectedChapter > 1 ? selectedChapter - 1 : maxChapters; 
+      if (selectedChapter < currentBook.chapters) {
+        newChapter = selectedChapter + 1;
+      } else { // Move to next book, chapter 1
+        const currentBookIndex = bibleBookList.findIndex(b => b.name === currentBookName);
+        if (currentBookIndex < bibleBookList.length - 1) {
+          const nextBook = bibleBookList[currentBookIndex + 1];
+          currentBookName = nextBook.name;
+          newChapter = 1;
+          setSelectedBookName(nextBook.name); // Update book state
+          setMaxChapters(nextBook.chapters); // Update max chapters for the new book
+        } else { // Last chapter of last book, loop to first book
+            const firstBook = bibleBookList[0];
+            currentBookName = firstBook.name;
+            newChapter = 1;
+            setSelectedBookName(firstBook.name);
+            setMaxChapters(firstBook.chapters);
+        }
+      }
+    } else { // prev
+      if (selectedChapter > 1) {
+        newChapter = selectedChapter - 1;
+      } else { // Move to previous book, last chapter
+        const currentBookIndex = bibleBookList.findIndex(b => b.name === currentBookName);
+        if (currentBookIndex > 0) {
+          const prevBook = bibleBookList[currentBookIndex - 1];
+          currentBookName = prevBook.name;
+          newChapter = prevBook.chapters;
+          setSelectedBookName(prevBook.name); // Update book state
+          setMaxChapters(prevBook.chapters); // Update max chapters for the new book
+        } else { // First chapter of first book, loop to last book
+            const lastBook = bibleBookList[bibleBookList.length -1];
+            currentBookName = lastBook.name;
+            newChapter = lastBook.chapters;
+            setSelectedBookName(lastBook.name);
+            setMaxChapters(lastBook.chapters);
+        }
+      }
     }
-    setSelectedChapter(newChapter);
-    fetchBibleChapter(selectedBookName, newChapter);
+    setSelectedChapter(newChapter); // Update chapter state
+    fetchBibleChapter(currentBookName, newChapter);
   };
 
+  // Initial fetch on component mount
   useEffect(() => {
-    setHighlightedVerses(new Set());
-    setChapterNotes('');
-    fetchBibleChapter(bibleBookList[0].name, 1);
+    fetchBibleChapter(selectedBookName, selectedChapter);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // Runs only once on mount
 
   const toggleHighlight = (verseNumber: number) => {
     setHighlightedVerses(prevHighlights => {
@@ -219,7 +287,7 @@ export default function BiblePage() {
             </div>
           )}
 
-          {error && (
+          {error && !isLoading && ( // Only show error if not loading
             <Card className="border-destructive bg-destructive/10">
               <CardContent className="p-4">
                 <div className="flex items-center text-destructive">
@@ -233,7 +301,7 @@ export default function BiblePage() {
             </Card>
           )}
 
-          {bibleContent && !error && (
+          {bibleContent && !error && !isLoading && ( // Only show content if no error and not loading
             <>
               <Card className="shadow-md">
                 <CardHeader>
@@ -312,3 +380,4 @@ export default function BiblePage() {
     </div>
   );
 }
+
