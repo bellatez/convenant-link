@@ -6,9 +6,9 @@ import { GameGeneratorForm } from "./game-generator-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Lightbulb, Gamepad2, Users, HelpCircle, Target as TargetIcon, CheckSquare, MessageSquare, Zap } from "lucide-react";
+import { Lightbulb, Gamepad2, Users, HelpCircle, Target as TargetIcon, CheckSquare, MessageSquare, Zap, Play } from "lucide-react"; // Added Play icon
 import { useState } from "react";
-import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast"; // Import useToast
 
 interface GameOption {
   id: string;
@@ -95,14 +95,26 @@ const predefinedGames: GameOption[] = [
 
 export default function GamesPage() {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const { toast } = useToast(); // Initialize useToast
 
   const selectedGame = predefinedGames.find(game => game.id === selectedGameId);
+
+  const handlePlayGame = () => {
+    if (selectedGame) {
+      toast({
+        title: `Starting ${selectedGame.title}`,
+        description: "Full gameplay coming soon!",
+      });
+      // Here you would eventually navigate to the game page:
+      // router.push(`/games/${selectedGame.id}`); 
+    }
+  };
 
   return (
     <div className="space-y-8">
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl">Fun & Games</CardTitle>
+          <CardTitle className="text-2xl">Fun &amp; Games</CardTitle>
           <CardDescription>
             Spark joy and connection! Generate a unique group game with AI or explore ideas for your next gathering.
           </CardDescription>
@@ -159,10 +171,16 @@ export default function GamesPage() {
 
             {selectedGame && (
               <div className="mt-4 pt-4 border-t space-y-4">
-                <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
-                  <selectedGame.icon className="h-5 w-5" />
-                  {selectedGame.title}
-                </h3>
+                <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
+                    <selectedGame.icon className="h-5 w-5" />
+                    {selectedGame.title}
+                    </h3>
+                    <Button onClick={handlePlayGame} size="sm">
+                        <Play className="mr-2 h-4 w-4" />
+                        Play Game
+                    </Button>
+                </div>
                 <p className="text-sm text-muted-foreground">{selectedGame.description}</p>
                 
                 {selectedGame.detailsTitle && (
@@ -200,10 +218,12 @@ export default function GamesPage() {
              )}
           </CardContent>
            <CardFooter>
-            <p className="text-xs text-muted-foreground">More interactive gameplays coming soon!</p>
+            <p className="text-xs text-muted-foreground">Interactive gameplays are currently in development.</p>
           </CardFooter>
         </Card>
       </div>
     </div>
   );
 }
+
+    
