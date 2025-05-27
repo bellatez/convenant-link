@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Lightbulb, Gamepad2, Users, HelpCircle, CheckSquare, Zap, Play, Target as TargetIcon, MessageSquare, ArrowRight } from "lucide-react"; 
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
-// import { useToast } from "@/hooks/use-toast"; // No longer needed here for play game button
 
 interface GameOption {
   id: string;
@@ -22,8 +21,8 @@ interface GameOption {
 }
 
 // Define icon aliases before they are used in predefinedGames
-const Brain = HelpCircle; 
-const MessageSquareHeart = MessageSquare; 
+const BrainIcon = HelpCircle; // Renamed to avoid conflict if Brain is a component
+const MessageSquareHeartIcon = MessageSquare; // Renamed for clarity
 
 const predefinedGames: GameOption[] = [
   {
@@ -32,7 +31,7 @@ const predefinedGames: GameOption[] = [
     description: "Timed quizzes or competitive Bible knowledge games.",
     detailsTitle: "Test Your Knowledge",
     details: ["Covers Old & New Testaments", "Various difficulty levels (soon)", "Track your high scores (soon)"],
-    icon: Brain, 
+    icon: BrainIcon, 
   },
   {
     id: "connection-cards",
@@ -40,7 +39,7 @@ const predefinedGames: GameOption[] = [
     description: "Digital cards with thought-provoking or fun questions to spark conversation.",
     detailsTitle: "Deepen Your Bond",
     details: ["Categories: Faith, Dreams, Fun Facts", "Take turns drawing and discussing", "Promotes open communication"],
-    icon: MessageSquareHeart, 
+    icon: MessageSquareHeartIcon, 
   },
   {
     id: "verse-match",
@@ -95,7 +94,6 @@ export default function GamesPage() {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [selectedMoodForGenerator, setSelectedMoodForGenerator] = useState<string>(moods[0]);
   const router = useRouter();
-  // const { toast } = useToast(); // No longer needed here
 
   const selectedGame = predefinedGames.find(game => game.id === selectedGameId);
 
@@ -117,7 +115,7 @@ export default function GamesPage() {
         <CardHeader>
           <CardTitle className="text-2xl">Fun &amp; Games</CardTitle>
           <CardDescription>
-            Spark joy and connection! Generate unique group game ideas with AI or explore and play our selection of games.
+            Spark joy and connection! Get unique group game ideas or explore and play our selection of games.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -246,5 +244,3 @@ export default function GamesPage() {
     </div>
   );
 }
-
-    

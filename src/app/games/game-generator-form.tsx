@@ -64,7 +64,7 @@ export function GameGeneratorForm({ initialMood, onMoodChange }: GameGeneratorFo
          toast({
           variant: "default",
           title: "No Game Generated",
-          description: `The AI couldn't come up with a game for "${mood}" this time. Try a different mood or try again!`,
+          description: `The generator couldn't come up with a game for "${mood}" this time. Try a different mood or try again!`,
         });
       }
     } catch (error) {
@@ -162,7 +162,7 @@ export function GameGeneratorForm({ initialMood, onMoodChange }: GameGeneratorFo
               <CardTitle className="text-2xl text-primary">{generatedGame.name}</CardTitle>
             </div>
             <CardDescription className="text-sm text-primary/80">
-              An AI-generated game idea for a "{form.getValues("mood")}" mood.
+              A generated game idea for a "{form.getValues("mood")}" mood.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5 pt-6">
@@ -197,5 +197,3 @@ export function GameGeneratorForm({ initialMood, onMoodChange }: GameGeneratorFo
     </div>
   );
 }
-
-    

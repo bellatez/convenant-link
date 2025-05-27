@@ -116,7 +116,7 @@ export default function EventsPage() {
             <div>
               <CardTitle className="text-2xl">Group Events & Meetings</CardTitle>
               <CardDescription>
-                Schedule, view, and manage all group gatherings. AI helps suggest discussion topics!
+                Schedule, view, and manage all group gatherings. Get help with discussion topic suggestions!
               </CardDescription>
             </div>
             <div className="flex gap-2 flex-wrap">

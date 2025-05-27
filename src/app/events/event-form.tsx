@@ -281,7 +281,7 @@ export function EventForm({ setEvents, onFormSubmit, eventToEdit }: EventFormPro
                 <Lightbulb className="mr-2 h-5 w-5 text-primary" /> Discussion Topic Proposals
               </FormLabel>
               <FormDescription>
-                {formMode === 'create' ? 'Select one of the AI-generated topics for this meeting.' : 'You can change the selected topic for this meeting.'}
+                {formMode === 'create' ? 'Select one of the generated topics for this meeting.' : 'You can change the selected topic for this meeting.'}
               </FormDescription>
               {isGeneratingTopics && formMode === 'create' ? (
                 <div className="flex items-center space-x-2 p-4 border rounded-md">
