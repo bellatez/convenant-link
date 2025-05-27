@@ -24,22 +24,22 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { ProjectForm } from "./project-form";
 import { ContributionForm } from "./contribution-form";
+import { ProjectDetailsDialog } from "./project-details-dialog"; // Import the new dialog
 import type { Project, Contribution } from "./types";
-import type { Family } from "../families/types"; // Import Family type
-import { Target, PlusCircle, CalendarClock, Edit, Trash2, Users2, Info, TrendingUp, HandCoins, Loader2 } from "lucide-react";
+import type { Family } from "../families/types";
+import { Target, PlusCircle, CalendarClock, Edit, Trash2, Users2, Info, TrendingUp, HandCoins, Loader2, Eye } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 
-// Helper to format XAF amounts with comma separators
 const formatXAF = (amount: number): string => {
   return amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 };
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [families, setFamilies] = useState<Family[]>([]); // State for families
+  const [families, setFamilies] = useState<Family[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const { toast } = useToast();
   
@@ -48,9 +48,11 @@ export default function ProjectsPage() {
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [isProjectDeleteDialogOpen, setIsProjectDeleteDialogOpen] = useState(false);
 
-
   const [isContributionModalOpen, setIsContributionModalOpen] = useState(false);
   const [selectedProjectForContribution, setSelectedProjectForContribution] = useState<Project | null>(null);
+
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [selectedProjectForDetails, setSelectedProjectForDetails] = useState<Project | null>(null);
 
 
   useEffect(() => {
@@ -62,7 +64,7 @@ export default function ProjectsPage() {
         return value;
       }));
     }
-    const storedFamilies = localStorage.getItem("covenantLinkFamilies"); // Load families
+    const storedFamilies = localStorage.getItem("covenantLinkFamilies"); 
     if (storedFamilies) {
       setFamilies(JSON.parse(storedFamilies));
     }
@@ -115,6 +117,11 @@ export default function ProjectsPage() {
     setSelectedProjectForContribution(null);
   }, []);
 
+  const handleOpenDetailsDialog = (project: Project) => {
+    setSelectedProjectForDetails(project);
+    setIsDetailsDialogOpen(true);
+  };
+
   const calculateCurrentAmount = (contributions: Contribution[]): number => {
     return contributions.reduce((acc, curr) => acc + curr.amount, 0);
   };
@@ -154,7 +161,6 @@ export default function ProjectsPage() {
 
       <Separator />
 
-      {/* Project Form Dialog */}
       <Dialog open={isProjectFormOpen} onOpenChange={(isOpen) => {
           setIsProjectFormOpen(isOpen);
           if (!isOpen) setProjectToEdit(null);
@@ -171,13 +177,12 @@ export default function ProjectsPage() {
               setProjects={setProjects}
               onFormSubmit={handleProjectFormSubmit}
               projectToEdit={projectToEdit}
-              registeredFamilyCount={families.length} // Pass family count
+              registeredFamilyCount={families.length} 
             />
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Contribution Form Dialog */}
       {selectedProjectForContribution && (
         <Dialog open={isContributionModalOpen} onOpenChange={(isOpen) => {
             setIsContributionModalOpen(isOpen);
@@ -195,14 +200,22 @@ export default function ProjectsPage() {
                 project={selectedProjectForContribution}
                 setProjects={setProjects}
                 onFormSubmit={handleContributionFormSubmit}
-                availableFamilies={families} // Pass available families
+                availableFamilies={families} 
               />
             </div>
           </DialogContent>
         </Dialog>
       )}
 
-      {/* Delete Project Confirmation Dialog */}
+      {selectedProjectForDetails && (
+        <ProjectDetailsDialog
+          project={selectedProjectForDetails}
+          isOpen={isDetailsDialogOpen}
+          onOpenChange={setIsDetailsDialogOpen}
+          allRegisteredFamilies={families}
+        />
+      )}
+
       <AlertDialog open={isProjectDeleteDialogOpen} onOpenChange={setIsProjectDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -220,7 +233,6 @@ export default function ProjectsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-
       {projects.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {projects.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime()).map((project) => {
@@ -234,11 +246,15 @@ export default function ProjectsPage() {
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-xl">{project.name}</CardTitle>
                     <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditProject(project)} className="text-muted-foreground hover:text-primary h-8 w-8">
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenDetailsDialog(project)} className="text-muted-foreground hover:text-primary h-8 w-8" title="View Details">
+                            <Eye className="h-4 w-4" />
+                            <span className="sr-only">View Details</span>
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleEditProject(project)} className="text-muted-foreground hover:text-primary h-8 w-8" title="Edit Project">
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Edit Project</span>
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => confirmDeleteProject(project)} className="text-muted-foreground hover:text-destructive h-8 w-8">
+                        <Button variant="ghost" size="icon" onClick={() => confirmDeleteProject(project)} className="text-muted-foreground hover:text-destructive h-8 w-8" title="Delete Project">
                             <Trash2 className="h-4 w-4" />
                             <span className="sr-only">Delete Project</span>
                         </Button>
@@ -253,7 +269,7 @@ export default function ProjectsPage() {
                   {project.description && (
                     <div className="flex items-start gap-2 text-sm text-muted-foreground">
                         <Info className="h-4 w-4 mt-0.5 flex-shrink-0 text-sky-600"/>
-                        <p className="italic">{project.description}</p>
+                        <p className="italic text-xs leading-relaxed line-clamp-3">{project.description}</p>
                     </div>
                   )}
                   <div className="space-y-2">
@@ -280,7 +296,7 @@ export default function ProjectsPage() {
                   <div>
                     <h4 className="text-sm font-medium mb-1 flex items-center gap-1.5 text-foreground">
                       <HandCoins className="h-4 w-4 text-muted-foreground" />
-                      Contributions ({project.contributions.length})
+                      Recent Contributions ({project.contributions.length})
                     </h4>
                     {project.contributions.length > 0 ? (
                       <ul className="text-xs text-muted-foreground list-disc list-inside max-h-24 overflow-y-auto space-y-0.5 pr-2">
@@ -320,5 +336,3 @@ export default function ProjectsPage() {
     </div>
   );
 }
-
-    
