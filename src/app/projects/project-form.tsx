@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, type Dispatch, type SetStateAction } from "react";
+import { useState, useEffect, type Dispatch, type SetStateAction } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -27,9 +27,9 @@ import { useToast } from "@/hooks/use-toast";
 
 const projectFormSchema = z.object({
   name: z.string().min(3, "Project name must be at least 3 characters long."),
-  description: z.string().min(10, "Description must be at least 10 characters long."),
+  description: z.string().min(10, "Description must be at least 10 characters long.").max(500, "Description must be 500 characters or less."),
   targetAmount: z.coerce.number().positive("Target amount must be a positive number."),
-  numberOfFamilies: z.coerce.number().int().positive("Number of families must be a positive integer."),
+  numberOfFamilies: z.coerce.number().int().min(1,"Number of families must be at least 1."),
   deadline: z.date({ required_error: "Please select a deadline for the project." }),
 });
 
@@ -39,9 +39,10 @@ interface ProjectFormProps {
   setProjects: Dispatch<SetStateAction<Project[]>>;
   onFormSubmit: () => void; // Callback to close dialog
   projectToEdit?: Project | null;
+  registeredFamilyCount: number; // New prop
 }
 
-export function ProjectForm({ setProjects, onFormSubmit, projectToEdit }: ProjectFormProps) {
+export function ProjectForm({ setProjects, onFormSubmit, projectToEdit, registeredFamilyCount }: ProjectFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const formMode = projectToEdit ? "edit" : "create";
@@ -52,10 +53,19 @@ export function ProjectForm({ setProjects, onFormSubmit, projectToEdit }: Projec
       name: projectToEdit?.name || "",
       description: projectToEdit?.description || "",
       targetAmount: projectToEdit?.targetAmount || 0,
-      numberOfFamilies: projectToEdit?.numberOfFamilies || 1,
-      deadline: projectToEdit?.deadline || new Date(new Date().setMonth(new Date().getMonth() + 1)), // Default to one month from now
+      numberOfFamilies: projectToEdit?.numberOfFamilies || (registeredFamilyCount > 0 ? registeredFamilyCount : 1),
+      deadline: projectToEdit?.deadline || new Date(new Date().setMonth(new Date().getMonth() + 1)),
     },
   });
+
+  // Update numberOfFamilies default if registeredFamilyCount changes and it's create mode
+  useEffect(() => {
+    if (formMode === 'create' && registeredFamilyCount > 0) {
+      form.setValue('numberOfFamilies', registeredFamilyCount);
+    }
+    // If editing, keep the stored numberOfFamilies unless it needs specific logic
+  }, [registeredFamilyCount, formMode, form]);
+
 
   const onSubmit: SubmitHandler<ProjectFormValues> = async (data) => {
     setIsLoading(true);
@@ -85,11 +95,12 @@ export function ProjectForm({ setProjects, onFormSubmit, projectToEdit }: Projec
           description: `"${data.name}" has been updated.`,
         });
       }
+      // Reset to defaults for 'create' mode, considering registeredFamilyCount
       form.reset({ 
         name: "", 
         description: "",
         targetAmount: 0, 
-        numberOfFamilies: 1,
+        numberOfFamilies: registeredFamilyCount > 0 ? registeredFamilyCount : 1,
         deadline: new Date(new Date().setMonth(new Date().getMonth() + 1)) 
       });
       onFormSubmit();
@@ -158,8 +169,11 @@ export function ProjectForm({ setProjects, onFormSubmit, projectToEdit }: Projec
               <FormItem>
                 <FormLabel>Number of Families</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="e.g., 10" {...field} min="1" />
+                  <Input type="number" placeholder={`e.g., ${registeredFamilyCount > 0 ? registeredFamilyCount : 1}`} {...field} min="1" />
                 </FormControl>
+                <FormDescription>
+                  Defaults to registered families. Adjust if needed.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -216,3 +230,5 @@ export function ProjectForm({ setProjects, onFormSubmit, projectToEdit }: Projec
     </Form>
   );
 }
+
+    

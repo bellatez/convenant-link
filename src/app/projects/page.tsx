@@ -11,13 +11,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { buttonVariants } from "@/components/ui/button";
 import { ProjectForm } from "./project-form";
 import { ContributionForm } from "./contribution-form";
 import type { Project, Contribution } from "./types";
+import type { Family } from "../families/types"; // Import Family type
 import { Target, PlusCircle, CalendarClock, Edit, Trash2, Users2, Info, TrendingUp, HandCoins, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 
 // Helper to format XAF amounts with comma separators
 const formatXAF = (amount: number): string => {
@@ -26,10 +39,15 @@ const formatXAF = (amount: number): string => {
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [families, setFamilies] = useState<Family[]>([]); // State for families
   const [isMounted, setIsMounted] = useState(false);
+  const { toast } = useToast();
   
   const [isProjectFormOpen, setIsProjectFormOpen] = useState(false);
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [isProjectDeleteDialogOpen, setIsProjectDeleteDialogOpen] = useState(false);
+
 
   const [isContributionModalOpen, setIsContributionModalOpen] = useState(false);
   const [selectedProjectForContribution, setSelectedProjectForContribution] = useState<Project | null>(null);
@@ -40,9 +58,13 @@ export default function ProjectsPage() {
     const storedProjects = localStorage.getItem("covenantLinkProjects");
     if (storedProjects) {
       setProjects(JSON.parse(storedProjects, (key, value) => {
-        if (key === 'deadline' || key === 'date') return new Date(value); // Ensure dates are parsed correctly
+        if (key === 'deadline' || key === 'date') return new Date(value);
         return value;
       }));
+    }
+    const storedFamilies = localStorage.getItem("covenantLinkFamilies"); // Load families
+    if (storedFamilies) {
+      setFamilies(JSON.parse(storedFamilies));
     }
   }, []);
 
@@ -67,10 +89,20 @@ export default function ProjectsPage() {
     setIsProjectFormOpen(true);
   };
   
-  const handleDeleteProject = (projectId: string) => {
-    if (window.confirm("Are you sure you want to delete this project and all its contributions? This action cannot be undone.")) {
-      setProjects(prev => prev.filter(p => p.id !== projectId));
-    }
+  const confirmDeleteProject = (project: Project) => {
+    setProjectToDelete(project);
+    setIsProjectDeleteDialogOpen(true);
+  };
+
+  const handleDeleteProject = () => {
+    if (!projectToDelete) return;
+    setProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
+    toast({
+      title: "Project Deleted",
+      description: `Project "${projectToDelete.name}" and its contributions have been removed.`,
+    });
+    setIsProjectDeleteDialogOpen(false);
+    setProjectToDelete(null);
   };
 
   const handleOpenContributionModal = (project: Project) => {
@@ -139,6 +171,7 @@ export default function ProjectsPage() {
               setProjects={setProjects}
               onFormSubmit={handleProjectFormSubmit}
               projectToEdit={projectToEdit}
+              registeredFamilyCount={families.length} // Pass family count
             />
           </div>
         </DialogContent>
@@ -154,7 +187,7 @@ export default function ProjectsPage() {
             <DialogHeader>
               <DialogTitle>Add Contribution to "{selectedProjectForContribution.name}"</DialogTitle>
               <DialogDescription>
-                Enter the details of the contribution.
+                Select the contributing family and enter the amount.
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
@@ -162,11 +195,30 @@ export default function ProjectsPage() {
                 project={selectedProjectForContribution}
                 setProjects={setProjects}
                 onFormSubmit={handleContributionFormSubmit}
+                availableFamilies={families} // Pass available families
               />
             </div>
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Delete Project Confirmation Dialog */}
+      <AlertDialog open={isProjectDeleteDialogOpen} onOpenChange={setIsProjectDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to delete this project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will remove "{projectToDelete?.name}" and all its contributions. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setProjectToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteProject} className={buttonVariants({variant: "destructive"})}>
+              Delete Project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
 
       {projects.length > 0 ? (
@@ -186,7 +238,7 @@ export default function ProjectsPage() {
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Edit Project</span>
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteProject(project.id)} className="text-muted-foreground hover:text-destructive h-8 w-8">
+                        <Button variant="ghost" size="icon" onClick={() => confirmDeleteProject(project)} className="text-muted-foreground hover:text-destructive h-8 w-8">
                             <Trash2 className="h-4 w-4" />
                             <span className="sr-only">Delete Project</span>
                         </Button>
@@ -221,7 +273,7 @@ export default function ProjectsPage() {
                     </div>
                     <div className="flex justify-between items-center text-sm">
                         <span className="text-muted-foreground flex items-center"><Target className="h-4 w-4 mr-1.5"/>Target / Family (XAF)</span>
-                        <span className="font-medium">{amountPerFamily > 0 ? formatXAF(amountPerFamily) : "N/A"}</span>
+                        <span className="font-medium">{amountPerFamily > 0 ? formatXAF(Math.ceil(amountPerFamily)) : "N/A"}</span>
                     </div>
                   </div>
                   
@@ -268,3 +320,5 @@ export default function ProjectsPage() {
     </div>
   );
 }
+
+    
