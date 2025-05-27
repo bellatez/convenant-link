@@ -6,9 +6,10 @@ import { GameGeneratorForm } from "./game-generator-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Lightbulb, Gamepad2, Users, HelpCircle, Target as TargetIcon, CheckSquare, MessageSquare, Zap, Play } from "lucide-react"; // Added Play icon
+import { Lightbulb, Gamepad2, Users, HelpCircle, Target as TargetIcon, CheckSquare, MessageSquare, Zap, Play, ArrowLeft } from "lucide-react";
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast"; // Import useToast
+import { useRouter } from 'next/navigation'; // Import useRouter
+import Link from "next/link";
 
 interface GameOption {
   id: string;
@@ -95,18 +96,13 @@ const predefinedGames: GameOption[] = [
 
 export default function GamesPage() {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
-  const { toast } = useToast(); // Initialize useToast
+  const router = useRouter(); // Initialize useRouter
 
   const selectedGame = predefinedGames.find(game => game.id === selectedGameId);
 
   const handlePlayGame = () => {
     if (selectedGame) {
-      toast({
-        title: `Starting ${selectedGame.title}`,
-        description: "Full gameplay coming soon!",
-      });
-      // Here you would eventually navigate to the game page:
-      // router.push(`/games/${selectedGame.id}`); 
+      router.push(`/games/${selectedGame.id}`); 
     }
   };
 
@@ -176,7 +172,7 @@ export default function GamesPage() {
                     <selectedGame.icon className="h-5 w-5" />
                     {selectedGame.title}
                     </h3>
-                    <Button onClick={handlePlayGame} size="sm">
+                    <Button onClick={handlePlayGame} size="sm" disabled={!selectedGame}>
                         <Play className="mr-2 h-4 w-4" />
                         Play Game
                     </Button>
@@ -218,12 +214,10 @@ export default function GamesPage() {
              )}
           </CardContent>
            <CardFooter>
-            <p className="text-xs text-muted-foreground">Interactive gameplays are currently in development.</p>
+            <p className="text-xs text-muted-foreground">Select a game and click "Play Game" to navigate to its page.</p>
           </CardFooter>
         </Card>
       </div>
     </div>
   );
 }
-
-    
