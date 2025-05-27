@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -11,12 +11,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose, // Added DialogClose
 } from "@/components/ui/dialog";
 import { EventForm } from "./event-form";
 import { EventCard } from "./event-card";
 import type { Event } from "./types";
-import { CalendarPlus, CalendarX, ListFilter } from "lucide-react";
+import { CalendarPlus, CalendarX, ListFilter, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
@@ -36,25 +35,36 @@ export default function EventsPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [filter, setFilter] = useState<FilterOptions>("upcoming");
+  const [eventToEdit, setEventToEdit] = useState<Event | null>(null);
+
 
   useEffect(() => {
     setIsMounted(true);
-    //  Here you would typically fetch events from a backend/database
-    // For now, we'll use local state which persists across navigation
-    // due to Next.js client-side routing, but not browser refresh.
+    // In a real app, fetch events from a backend/database here.
+    // For now, local state persists across navigation due to Next.js client-side routing.
   }, []);
 
-  const handleFormSubmit = () => {
-    setIsDialogOpen(false); // Close dialog after form submission
-  };
+  const handleFormSubmit = useCallback(() => {
+    setIsDialogOpen(false);
+    setEventToEdit(null); // Reset eventToEdit after form submission
+  }, []);
+
+  const handleEditEvent = useCallback((event: Event) => {
+    setEventToEdit(event);
+    setIsDialogOpen(true);
+  }, []);
+
+  const handleAddNewEvent = () => {
+    setEventToEdit(null); // Ensure form is in "create" mode
+    setIsDialogOpen(true);
+  }
 
   const now = new Date();
+  now.setHours(0,0,0,0); // Normalize 'now' to the start of today for date comparisons
 
   const filteredEvents = events.filter(event => {
     const eventDate = new Date(event.date);
-    // Combine date and time for accurate comparison
-    const [hours, minutes] = event.time.split(':').map(Number);
-    eventDate.setHours(hours, minutes, 0, 0);
+    eventDate.setHours(0,0,0,0); // Normalize event date
 
     if (filter === "upcoming") {
       return eventDate >= now;
@@ -63,7 +73,7 @@ export default function EventsPage() {
       return eventDate < now;
     }
     return true; // "all"
-  }).sort((a,b) => { // Ensure consistent sorting after filtering
+  }).sort((a,b) => {
     const aDateTime = new Date(a.date);
     const [aHours, aMinutes] = a.time.split(':').map(Number);
     aDateTime.setHours(aHours, aMinutes, 0, 0);
@@ -73,23 +83,22 @@ export default function EventsPage() {
     bDateTime.setHours(bHours, bMinutes, 0, 0);
     
     if (filter === "past") {
-      return bDateTime.getTime() - aDateTime.getTime(); // Sort past events descending (most recent first)
+      return bDateTime.getTime() - aDateTime.getTime(); // Sort past events descending
     }
-    return aDateTime.getTime() - bDateTime.getTime(); // Sort upcoming events ascending (soonest first)
+    return aDateTime.getTime() - bDateTime.getTime(); // Sort upcoming events ascending
   });
 
   if (!isMounted) {
-    // You can render a loading skeleton here if needed
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)] text-center p-6">
          <Card className="w-full max-w-md shadow-xl">
             <CardHeader className="items-center">
-                <CalendarPlus className="h-16 w-16 text-primary mb-4" />
+                <Loader2 className="h-16 w-16 text-primary mb-4 animate-spin" />
                 <CardTitle className="text-3xl font-bold">Event Scheduler</CardTitle>
                 <CardDescription className="text-lg">Loading events...</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="animate-pulse space-y-4">
+                <div className="space-y-4">
                     <div className="h-8 bg-muted rounded w-3/4 mx-auto"></div>
                     <div className="h-24 bg-muted rounded w-full mx-auto"></div>
                 </div>
@@ -105,17 +114,17 @@ export default function EventsPage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <CardTitle className="text-2xl">Group Events</CardTitle>
+              <CardTitle className="text-2xl">Group Events & Meetings</CardTitle>
               <CardDescription>
-                Create, view, and manage all group meetings, outings, and special events.
+                Schedule, view, and manage all group gatherings. AI helps suggest discussion topics!
               </CardDescription>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="shrink-0">
                     <ListFilter className="mr-2 h-4 w-4" />
-                    Filter Events
+                    Filter ({filter})
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-[180px]">
@@ -129,37 +138,43 @@ export default function EventsPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="shrink-0">
-                    <CalendarPlus className="mr-2 h-4 w-4" />
-                    Add New Event
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[625px]">
-                  <DialogHeader>
-                    <DialogTitle>Create a New Event</DialogTitle>
-                    <DialogDescription>
-                      Fill in the details below to schedule a new event for the group.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="py-4">
-                    <EventForm setEvents={setEvents} onFormSubmit={handleFormSubmit} />
-                  </div>
-                  {/* DialogClose is often not needed if form submission handles closing */}
-                </DialogContent>
-              </Dialog>
+              <Button onClick={handleAddNewEvent} className="shrink-0">
+                <CalendarPlus className="mr-2 h-4 w-4" />
+                Add New Event
+              </Button>
             </div>
           </div>
         </CardHeader>
       </Card>
 
       <Separator />
+        
+      <Dialog open={isDialogOpen} onOpenChange={(isOpen) => {
+          setIsDialogOpen(isOpen);
+          if (!isOpen) setEventToEdit(null); // Reset edit state when dialog closes
+      }}>
+        <DialogContent className="sm:max-w-[625px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{eventToEdit ? "Edit Event" : "Create a New Event"}</DialogTitle>
+            <DialogDescription>
+              {eventToEdit ? "Update the details for this event." : "Fill in the details below to schedule a new event. New events default to the first Sunday of the month."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <EventForm 
+                setEvents={setEvents} 
+                onFormSubmit={handleFormSubmit}
+                eventToEdit={eventToEdit} 
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
       {filteredEvents.length > 0 ? (
         <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
           {filteredEvents.map((event) => (
-            <EventCard key={event.id} event={event} />
+            <EventCard key={event.id} event={event} onEdit={handleEditEvent} />
           ))}
         </div>
       ) : (
@@ -172,15 +187,15 @@ export default function EventsPage() {
                filter === "past" ? "No Past Events" :
                "No Events Yet"}
             </h3>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground max-w-md mx-auto">
               {filter === "all" && events.length > 0 ? "Try a different filter to see other events." :
-               filter === "upcoming" && events.length > 0 ? "All events are in the past. Check 'Past' or 'All Events'." :
+               filter === "upcoming" && events.length > 0 ? "All scheduled events are in the past. Check 'Past' or 'All Events' to see them." :
                filter === "past" && events.length > 0 ? "No events have occurred yet. Check 'Upcoming' or 'All Events'." :
-               "Get started by adding a new event!"
+               "Get started by adding a new event for your group!"
               }
             </p>
             {events.length === 0 && (
-                 <Button onClick={() => setIsDialogOpen(true)} className="mt-4">
+                 <Button onClick={handleAddNewEvent} className="mt-6">
                     <CalendarPlus className="mr-2 h-4 w-4" /> Add First Event
                 </Button>
             )}
