@@ -1,6 +1,7 @@
+
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react'; // Import useState and useEffect
 import Link from 'next/link';
 import {
   SidebarProvider,
@@ -19,8 +20,8 @@ import { Icons } from '@/components/icons';
 import { siteConfig } from '@/config/site';
 import { SidebarNav } from './sidebar-nav';
 import { usePathname } from 'next/navigation';
-import { Sun, Moon } from 'lucide-react'; // Assuming dark mode toggle later
-import { useTheme } from 'next-themes'; // Assuming next-themes for dark mode
+import { Sun, Moon } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 type AppLayoutProps = {
   children: React.ReactNode;
@@ -28,16 +29,20 @@ type AppLayoutProps = {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme() ?? {}; // Provide default empty object if useTheme is not ready
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // useEffect runs only on client-side after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const currentPage = siteConfig.mainNav.find(item => item.href === pathname);
   const pageTitle = currentPage?.title || siteConfig.name;
 
-  // Fallback for theme if useTheme is not available or not configured
-  const currentTheme = theme || 'light';
   const toggleTheme = () => {
     if (setTheme) {
-      setTheme(currentTheme === 'light' ? 'dark' : 'light');
+      setTheme(theme === 'light' ? 'dark' : 'light');
     }
   };
 
@@ -58,10 +63,10 @@ export function AppLayout({ children }: AppLayoutProps) {
           <SidebarNav />
         </SidebarContent>
         <SidebarFooter className="p-4">
-           {/* Placeholder for potential dark mode toggle or user avatar */}
-           {setTheme && (
+           {/* Theme toggle button, only rendered on client after mount */}
+           {mounted && setTheme && (
             <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent">
-              {currentTheme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
               <span className="sr-only">Toggle theme</span>
             </Button>
           )}
