@@ -18,7 +18,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, BookOpen, AlertTriangle, ChevronLeft, ChevronRight, Highlighter, NotebookText } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Loader2, BookOpen, AlertTriangle, ChevronLeft, ChevronRight, Highlighter, StickyNote } from "lucide-react";
 import { bibleBookList, getBook, type BibleBook } from "@/lib/bible-data";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -53,32 +62,35 @@ export default function BiblePage() {
   const [error, setError] = useState<string | null>(null);
 
   const [highlightedVerses, setHighlightedVerses] = useState<Set<number>>(new Set());
-  const [chapterNotes, setChapterNotes] = useState<string>("");
+  const [verseNotes, setVerseNotes] = useState<Map<number, string>>(new Map());
+  
+  const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
+  const [currentEditingVerse, setCurrentEditingVerse] = useState<{ book: string; chapter: number; verseNumber: number; verseText: string } | null>(null);
+  const [currentNoteText, setCurrentNoteText] = useState("");
 
   useEffect(() => {
     const book = getBook(selectedBookName);
     if (book) {
       setMaxChapters(book.chapters);
-      // Reset chapter to 1 if it's invalid for the new book, or if the book changes and chapter isn't 1.
       if (selectedChapter > book.chapters || (selectedChapter !== 1 && book.name !== selectedBookName)) {
         setSelectedChapter(1);
       }
     }
-  }, [selectedBookName]); // Removed selectedChapter from dependencies to avoid loop, handle in handleBookChange
+  }, [selectedBookName]);
 
   const fetchBibleChapter = async (book: string, chapter: number) => {
     setIsLoading(true);
     setError(null);
     setBibleContent(null);
-    // Reset highlights and notes for the new chapter only if it's a new fetch, not for initial load if content already there
+    
     if (bibleContent?.reference !== `${book} ${chapter}`) { 
         setHighlightedVerses(new Set());
-        setChapterNotes("");
+        setVerseNotes(new Map()); // Reset verse-specific notes
     }
     
     try {
       const response = await fetch(
-        `https://bible-api.com/${encodeURIComponent(book)}+${chapter}?translation=bbe` // Changed to bbe
+        `https://bible-api.com/${encodeURIComponent(book)}+${chapter}?translation=kjv` 
       );
       if (!response.ok) {
         let errorMsg = `HTTP error! status: ${response.status}`;
@@ -125,7 +137,7 @@ export default function BiblePage() {
       setBibleContent(null); 
       setError(null);
       setHighlightedVerses(new Set());
-      setChapterNotes("");
+      setVerseNotes(new Map());
     }
   };
 
@@ -134,7 +146,7 @@ export default function BiblePage() {
     setBibleContent(null); 
     setError(null);
     setHighlightedVerses(new Set());
-    setChapterNotes("");
+    setVerseNotes(new Map());
   };
 
   const handleSubmit = (e?: React.FormEvent) => {
@@ -211,13 +223,40 @@ export default function BiblePage() {
     });
   };
 
+  const openNoteDialog = (verse: BibleVerse) => {
+    if (!bibleContent) return;
+    setCurrentEditingVerse({
+      book: bibleContent.verses[0].book_name, // Assuming all verses in content are from same book/chap
+      chapter: bibleContent.verses[0].chapter,
+      verseNumber: verse.verse,
+      verseText: verse.text
+    });
+    setCurrentNoteText(verseNotes.get(verse.verse) || "");
+    setIsNoteDialogOpen(true);
+  };
+
+  const handleSaveNote = () => {
+    if (currentEditingVerse) {
+      setVerseNotes(prevNotes => new Map(prevNotes).set(currentEditingVerse.verseNumber, currentNoteText));
+    }
+    setIsNoteDialogOpen(false);
+    setCurrentEditingVerse(null);
+    setCurrentNoteText("");
+  };
+
+  const handleCloseNoteDialog = () => {
+    setIsNoteDialogOpen(false);
+    setCurrentEditingVerse(null);
+    setCurrentNoteText("");
+  };
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Interactive Bible Study</CardTitle>
           <CardDescription>
-            Select a book and chapter to read from the Bible in Basic English (BBE). You can also highlight verses and take notes for the chapter.
+            Select a book and chapter to read from the King James Version (KJV). You can highlight verses and click a verse to add/edit personal notes.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -298,7 +337,7 @@ export default function BiblePage() {
               <Card className="shadow-md">
                 <CardHeader>
                   <CardTitle className="text-2xl">{bibleContent.reference}</CardTitle>
-                  <CardDescription>{bibleContent.translation_name || "Bible in Basic English"}</CardDescription>
+                  <CardDescription>{bibleContent.translation_name || "King James Version"}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-[400px] pr-4">
@@ -308,7 +347,7 @@ export default function BiblePage() {
                             key={verse.verse} 
                             className={`flex items-start gap-2 py-1 rounded-md transition-colors ${highlightedVerses.has(verse.verse) ? 'bg-primary/10' : ''}`}
                         >
-                            <span className="pl-1 flex-shrink-0 pt-0.5">
+                            <span className="pl-1 flex-shrink-0 pt-0.5 space-x-1">
                                 <Button
                                 variant="ghost"
                                 size="icon"
@@ -319,8 +358,15 @@ export default function BiblePage() {
                                 >
                                 <Highlighter className={`h-4 w-4 ${highlightedVerses.has(verse.verse) ? 'text-primary fill-primary/30' : 'text-muted-foreground hover:text-primary/80'}`} />
                                 </Button>
+                                {verseNotes.has(verse.verse) && (
+                                    <StickyNote className="h-4 w-4 text-accent-foreground inline-block" title="This verse has a note" />
+                                )}
                             </span>
-                            <p className="flex-grow pr-1">
+                            <p 
+                              className="flex-grow pr-1 cursor-pointer hover:bg-secondary/30 rounded px-1"
+                              onClick={() => openNoteDialog(verse)}
+                              title={`Click to add/edit note for verse ${verse.verse}`}
+                            >
                                 <sup className="text-xs text-primary font-semibold mr-1">{verse.verse}</sup>
                                 {verse.text}
                             </p>
@@ -343,33 +389,47 @@ export default function BiblePage() {
                   </Button>
                 </CardFooter>
               </Card>
-
-              <Card className="mt-6 shadow-md">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-xl">
-                    <NotebookText className="mr-2 h-5 w-5 text-primary" /> Chapter Notes
-                  </CardTitle>
-                  <CardDescription>
-                    Your personal notes for {bibleContent.reference}. These are session-based and will reset if you change chapters/books.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Label htmlFor="chapter-notes-textarea" className="sr-only">Chapter Notes for {bibleContent.reference}</Label>
-                  <Textarea
-                    id="chapter-notes-textarea"
-                    placeholder="Type your reflections, questions, or key points here..."
-                    value={chapterNotes}
-                    onChange={(e) => setChapterNotes(e.target.value)}
-                    rows={6}
-                    className="w-full text-sm"
-                  />
-                </CardContent>
-              </Card>
             </>
           )}
         </CardContent>
       </Card>
+
+      {currentEditingVerse && (
+        <Dialog open={isNoteDialogOpen} onOpenChange={(isOpen) => {
+            if (!isOpen) handleCloseNoteDialog();
+            else setIsNoteDialogOpen(true);
+        }}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Note for {currentEditingVerse.book} {currentEditingVerse.chapter}:{currentEditingVerse.verseNumber}</DialogTitle>
+              <DialogDescription className="pt-2 text-sm text-muted-foreground italic">
+                "{currentEditingVerse.verseText}"
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <Label htmlFor="note-textarea" className="sr-only">
+                Note
+              </Label>
+              <Textarea
+                id="note-textarea"
+                value={currentNoteText}
+                onChange={(e) => setCurrentNoteText(e.target.value)}
+                placeholder="Type your note here..."
+                rows={5}
+                className="text-sm"
+              />
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline" onClick={handleCloseNoteDialog}>
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="button" onClick={handleSaveNote}>Save Note</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
-
